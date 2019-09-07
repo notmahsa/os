@@ -10,23 +10,23 @@ int factorial(int input){
 int main(int argc, char **argv)
 {
 	if (argc != 2){
-	    printf("Huh?");
+	    printf("Huh?\n");
 	    return 0;
 	}
 
     int int_input = strtol(argv[1], NULL, 10);
     if (int_input > 12){
-        printf("Overflow");
+        printf("Overflow\n");
         return 0;
     }
 
 	float dec_input = atof(argv[1]);
     if (int_input < 1 || dec_input != int_input){
-        printf("Huh?");
+        printf("Huh?\n");
         return 0;
     }
 
-    printf("%d", factorial(int_input));
+    printf("%d\n", factorial(int_input));
 
 	return 0;
 }
