@@ -308,7 +308,7 @@ int _ht_string_compare(void* first_key, void* second_key, size_t key_size) {
     first_key_char = (char*)first_key;
     second_key_char = (char*)second_key;
     // printf("1: %s, 2: %s - %d\n", first_key_char, second_key_char, strcmp(first_key, second_key));
-	return strcmp(first_key, second_key);
+	return strcmp(first_key_char, second_key_char);
 }
 
 size_t _ht_default_hash(void* raw_key, size_t key_size) {
