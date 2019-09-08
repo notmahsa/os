@@ -6,7 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#if defined(__MACH__)
+#include <stdlib.h>
+#else
 #include <malloc.h>
+#endif
 #include <unistd.h>
 #include <assert.h>
 #include "wc.h"
