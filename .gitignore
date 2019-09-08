@@ -47,5 +47,7 @@ CTestTestfile.cmake
 ### Other ###
 build/
 .idea/
-.DS_Store/
+*.DS_Store
 *.dSYM/
+wc-big*
+*run_big_test_wc
