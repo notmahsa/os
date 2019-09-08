@@ -89,7 +89,9 @@ void _ht_int_swap(size_t* first, size_t* second);
 void _ht_pointer_swap(void** first, void** second);
 
 size_t _ht_default_hash(void* key, size_t key_size);
+size_t _ht_string_hash(void* key, size_t key_size);
 int _ht_default_compare(void* first_key, void* second_key, size_t key_size);
+int _ht_string_compare(void* first_key, void* second_key, size_t key_size);
 
 size_t _ht_hash(const HashTable* table, void* key);
 bool _ht_equal(const HashTable* table, void* first_key, void* second_key);

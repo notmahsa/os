@@ -28,27 +28,33 @@ void
 wc_output(struct wc *wc)
 {
     HashTable table;
-    ht_setup(&table, sizeof(int), sizeof(char*), 10);
-    char * word_array_copy = strdup(wc->word_array);
+    ht_setup(&table, sizeof(char) * 20, sizeof(int), 10);
+    char * word_array_copy;
+    word_array_copy = strdup(wc->word_array);
 
     char * token;
-    token = strtok(word_array_copy, " ");
-    int i = 0;
+//    char * key;
+    token = strtok(word_array_copy, " \n");
+    int i;
+    i = 0;
     int new_val;
     while (token != NULL)
     {
         new_val = 1;
-        if (ht_contains(&table, &token))
-            new_val += *(int*)ht_lookup(&table, &token);
-
-        ht_insert(&table, &token, &new_val);
+        if (ht_contains(&table, token)){
+            new_val += *(int*)ht_lookup(&table, token);
+        }
+        ht_insert(&table, token, &new_val);
         i++;
-        token = strtok(NULL, " ");
+        token = strtok(NULL, " \n");
     }
 
-    for (int i = 0; i < table.size; i++){
-        char * keyword = *(char**)(table.nodes[i]->key);
-        printf("%s: %d", keyword, *(int*)ht_lookup(&table, &keyword));
+    HTNode* node;
+    size_t index;
+    for (index = 0; index < table.capacity; index++) {
+        for (node = table.nodes[index]; node; node = node->next) {
+            printf("%s:%d\n", (char*)node->key, *(int*)node->value);
+        }
     }
 
 	ht_clear(&table);
@@ -58,6 +64,6 @@ wc_output(struct wc *wc)
 void
 wc_destroy(struct wc *wc)
 {
-	//TBD();
+	free(wc->word_array);
 	free(wc);
 }
