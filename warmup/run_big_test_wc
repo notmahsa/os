@@ -1,12 +1,13 @@
 #!/bin/bash
 
-SRC_PATH=/cad2/ece344f/src
-
+#SRC_PATH=/cad2/ece344f/src
+SRC_PATH=.
 function cleanup {
     rm -f wc.out wc-big.out
 }
 
-trap cleanup EXIT
+rm -f wc.out wc-big.out
+#trap cleanup EXIT
 
 if [ ! -x ./test_wc ]; then
    echo "./test_wc not found" 1>&2

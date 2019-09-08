@@ -28,13 +28,13 @@ void
 wc_output(struct wc *wc)
 {
     HashTable table;
-    ht_setup(&table, sizeof(char) * 20, sizeof(int), 10);
+    ht_setup(&table, sizeof(char) * 150, sizeof(int), 10);
     char * word_array_copy;
     word_array_copy = strdup(wc->word_array);
 
     char * token;
 //    char * key;
-    token = strtok(word_array_copy, " \n");
+    token = strtok(word_array_copy, " \r\n\t");
     int i;
     i = 0;
     int new_val;
@@ -46,7 +46,7 @@ wc_output(struct wc *wc)
         }
         ht_insert(&table, token, &new_val);
         i++;
-        token = strtok(NULL, " \n");
+        token = strtok(NULL, " \r\n\t");
     }
 
     HTNode* node;
