@@ -136,9 +136,9 @@ main(int argc, char *argv[])
         }
     }
     else {
-        char * created_dir;
-        created_dir = make_dir(argv[2], basename(argv[1]), buf->st_mode);
-        copy_dir(argv[1], created_dir, 8);
+        // char * created_dir;
+        // created_dir = make_dir(argv[2], basename(argv[1]), buf->st_mode);
+        copy_dir(argv[1], argv[2], 8);
     }
     free(buf);
 }
