@@ -34,7 +34,7 @@ wc_output(struct wc *wc)
 
     char * token;
 //    char * key;
-    token = strtok(word_array_copy, " \r\n\t");
+    token = strtok(word_array_copy, " \r\n\t\f");
     int i;
     i = 0;
     int new_val;
@@ -46,7 +46,7 @@ wc_output(struct wc *wc)
         }
         ht_insert(&table, token, &new_val);
         i++;
-        token = strtok(NULL, " \r\n\t");
+        token = strtok(NULL, " \r\n\t\f");
     }
 
     HTNode* node;
