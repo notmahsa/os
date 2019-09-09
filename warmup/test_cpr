@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SRC=~/Downloads/tester
+SRC=/cad2/ece344f/tester
 DST=./tester
 
 # test for mkdir error
