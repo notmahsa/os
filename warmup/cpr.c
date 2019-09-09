@@ -70,10 +70,10 @@ make_dir(const char *destination, const char *foldername, const mode_t mode){
     snprintf(buf, sizeof(char) * 16384, "%s/%s", destination, foldername);
     //printf("Creating folder %s, dest=%s, foldername=%s\n", buf, destination, foldername);
     if (mkdir(buf, mode) != 0){
-        if (errno == EEXIST){
-            //printf("Folder %s already exists", buf);
-            return buf;
-        }
+//        if (errno == EEXIST){
+//            //printf("Folder %s already exists", buf);
+//            return buf;
+//        }
         syserror(mkdir, buf);
     }
     return buf;
@@ -136,8 +136,8 @@ main(int argc, char *argv[])
         }
     }
     else {
-        // char * created_dir;
-        // created_dir = make_dir(argv[2], basename(argv[1]), buf->st_mode);
+        char * created_dir;
+        created_dir = make_dir(dirname(argv[2]), basename(argv[2]), buf->st_mode);
         copy_dir(argv[1], argv[2], 8);
     }
     free(buf);
