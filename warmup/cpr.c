@@ -119,7 +119,7 @@ copy_dir(const char *location, const char *destination, int indent)
             //printf("%*s[%s]\n", indent, "", entry->d_name);
 
             char * created_dir;
-            struct stat * loc_stat = get_stat(buf);
+            struct stat * loc_stat = get_stat(location);
             created_dir = make_dir(destination, entry->d_name, loc_stat->st_mode);
             free(loc_stat);
 
