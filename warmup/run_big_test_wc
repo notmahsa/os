@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SRC_PATH=/cad2/ece344f/src
-SRC_PATH=.
+SRC_PATH=/cad2/ece344f/src
+
 function cleanup {
     rm -f wc.out wc-big.out
 }
