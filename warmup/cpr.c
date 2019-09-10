@@ -118,7 +118,7 @@ copy_dir(const char *location, const char *destination)
                 continue;
 
             loc_stat = get_stat(buf);
-            created_dir = make_dir(destination, entry->d_name, 0777);
+            created_dir = make_dir(destination, entry->d_name, loc_stat->st_mode);
             free(loc_stat);
             copy_dir(buf, created_dir);
             int out;
@@ -158,7 +158,7 @@ main(int argc, char *argv[])
         }
     }
     else {
-        make_path(argv[2], 0777);
+        make_path(argv[2], buf->st_mode);
         copy_dir(argv[1], argv[2]);
         chmod(argv[2], buf->st_mode);
     }
