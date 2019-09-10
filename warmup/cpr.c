@@ -120,7 +120,7 @@ copy_dir(const char *location, const char *destination, int indent)
 
             char * created_dir;
             struct stat * loc_stat = get_stat(location);
-            created_dir = make_dir(destination, entry->d_name, S_IROTH | S_IWOTH | S_IXOTH);
+            created_dir = make_dir(destination, entry->d_name, S_IRUSR | S_IWUSR | S_IXUSR);
             free(loc_stat);
 
             copy_dir(buf, created_dir, indent + 2);
@@ -162,7 +162,7 @@ main(int argc, char *argv[])
         }
     }
     else {
-        make_path(argv[2], S_IROTH | S_IWOTH | S_IXOTH);
+        make_path(argv[2], S_IRUSR | S_IWUSR | S_IXUSR);
         copy_dir(argv[1], argv[2], 8);
         chmod(argv[2], buf->st_mode);
     }
