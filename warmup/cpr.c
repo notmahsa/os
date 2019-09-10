@@ -120,7 +120,7 @@ copy_dir(const char *location, const char *destination, int indent)
 
             char * created_dir;
             struct stat * loc_stat = get_stat(location);
-            created_dir = make_dir(destination, entry->d_name, S_IRUSR | S_IWUSR | S_IXUSR);
+            created_dir = make_dir(destination, entry->d_name, 0x1FF);
             free(loc_stat);
 
             copy_dir(buf, created_dir, indent + 2);
