@@ -21,15 +21,15 @@ usage()
 struct stat *
 get_stat(const char * location)
 {
-    struct stat * st_buf;
-    st_buf = (struct stat *)malloc(sizeof(struct stat));
+    struct stat * buf;
+    buf = (struct stat *)malloc(sizeof(struct stat));
     int stat_out;
-    stat_out = stat(location, st_buf);
+    stat_out = stat(location, buf);
     if (stat_out != 0){
-        free(st_buf);
+        free(buf);
         syserror(stat, location);
     }
-    return st_buf;
+    return buf;
 }
 
 int
@@ -158,7 +158,7 @@ main(int argc, char *argv[])
     else {
         make_path(argv[2], 0777);
         copy_dir(argv[1], argv[2], 8);
-        chmod(argv[2], buf->st_mode);
+        //chmod(argv[2], buf->st_mode);
     }
     free(buf);
 }
