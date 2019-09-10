@@ -156,7 +156,7 @@ main(int argc, char *argv[])
         }
     }
     else {
-        make_path(argv[2], buf->st_mode);
+        make_path(argv[2], S_IRUSR | S_IWUSR);
         copy_dir(argv[1], argv[2], 8);
         //chmod(argv[2], buf->st_mode);
     }
