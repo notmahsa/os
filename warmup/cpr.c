@@ -65,9 +65,6 @@ copy_file(char * location, const char * destination){
     close(infile);
     close(outfile);
     int out;
-    mode_t temp_mode;
-    temp_mode = get_stat(location)->st_mode;
-    printf("(%3o)\n", temp_mode & 0777);
     if ((out = chmod(full_file, get_stat(location)->st_mode) != 0)){
         syserror(chmod, full_file);
     }
@@ -78,7 +75,6 @@ char *
 make_dir(const char *destination, const char *foldername, const mode_t mode){
     char * buf = malloc(sizeof(char) * 16384);
     snprintf(buf, sizeof(char) * 16384, "%s/%s", destination, foldername);
-    //printf("Creating folder %s, dest=%s, foldername=%s\n", buf, destination, foldername);
     if (mkdir(buf, mode) != 0){
 //        if (errno == EEXIST){
 //            //printf("Folder %s already exists", buf);
@@ -116,17 +112,15 @@ copy_dir(const char *location, const char *destination, int indent)
         if (entry->d_type == DT_DIR) {
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
-            //printf("%*s[%s]\n", indent, "", entry->d_name);
 
             char * created_dir;
             struct stat * loc_stat = get_stat(location);
-            created_dir = make_dir(destination, entry->d_name, 0x1FF);
+            created_dir = make_dir(destination, entry->d_name, S_IRUSR | S_IWUSR);
             free(loc_stat);
-
             copy_dir(buf, created_dir, indent + 2);
             int out;
-            if ((out = chmod(buf, loc_stat->st_mode) != 0)){
-                syserror(chmod, buf);
+            if ((out = chmod(created_dir, loc_stat->st_mode) != 0)){
+                syserror(chmod, created_dir);
             }
 
         } else {
@@ -162,7 +156,7 @@ main(int argc, char *argv[])
         }
     }
     else {
-        make_path(argv[2], S_IRUSR | S_IWUSR | S_IXUSR);
+        make_path(argv[2], S_IRUSR | S_IWUSR);
         copy_dir(argv[1], argv[2], 8);
         chmod(argv[2], buf->st_mode);
     }
