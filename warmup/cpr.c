@@ -115,7 +115,7 @@ copy_dir(const char *location, const char *destination, int indent)
 
             char * created_dir;
             struct stat * loc_stat = get_stat(location);
-            created_dir = make_dir(destination, entry->d_name, S_IRUSR | S_IWUSR);
+            created_dir = make_dir(destination, entry->d_name, loc_stat->st_mode);
             free(loc_stat);
             copy_dir(buf, created_dir, indent + 2);
             int out;
