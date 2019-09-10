@@ -18,38 +18,6 @@ usage()
 	exit(1);
 }
 
-int
-copy_file(char * location, const char * destination){
-    char buf[4096];
-    int infile;
-    int outfile;
-    size_t ret;
-
-    infile = open(location, O_RDONLY);
-    if (infile == -1)
-        return -1;
-
-    outfile = open(destination, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-    if (outfile == -1)
-    {
-        char filename[1024];
-        snprintf(filename, sizeof(filename), "%s/%s", destination, basename(location));
-        outfile = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-
-        if (outfile == -1) {
-            close(infile);
-            return -1;
-        }
-    }
-
-    while ((ret = read(infile, buf, sizeof(buf))) != 0)
-        write(outfile, buf, ret);
-
-    close(infile);
-    close(outfile);
-    return 0;
-}
-
 struct stat *
 get_stat(const char * location)
 {
@@ -62,6 +30,45 @@ get_stat(const char * location)
         syserror(stat, location);
     }
     return buf;
+}
+
+int
+copy_file(char * location, const char * destination){
+    char buf[4096];
+    int infile;
+    int outfile;
+    size_t ret;
+    char * full_file;
+    full_file = (char*)destination;
+
+    infile = open(location, O_RDONLY);
+    if (infile == -1)
+        return -1;
+
+    outfile = open(destination, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+    if (outfile == -1)
+    {
+        char filename[1024];
+        snprintf(filename, sizeof(filename), "%s/%s", destination, basename(location));
+        outfile = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+        full_file = filename;
+
+        if (outfile == -1) {
+            close(infile);
+            return -1;
+        }
+    }
+
+    while ((ret = read(infile, buf, sizeof(buf))) != 0)
+        write(outfile, buf, ret);
+
+    close(infile);
+    close(outfile);
+    int out;
+    if ((out = chmod(full_file, get_stat(location)->st_mode) != 0)){
+        syserror(chmod, full_file);
+    }
+    return 0;
 }
 
 char *
@@ -77,6 +84,17 @@ make_dir(const char *destination, const char *foldername, const mode_t mode){
         syserror(mkdir, buf);
     }
     return buf;
+}
+
+void
+make_path(const char *destination, const mode_t mode){
+    if (mkdir(destination, mode) != 0){
+//        if (errno == EEXIST){
+//            //printf("Folder %s already exists", buf);
+//            return buf;
+//        }
+        syserror(mkdir, destination);
+    }
 }
 
 void
@@ -136,7 +154,7 @@ main(int argc, char *argv[])
         }
     }
     else {
-        make_dir(dirname(argv[2]), basename(argv[2]), buf->st_mode);
+        make_path(argv[2], buf->st_mode);
         copy_dir(argv[1], argv[2], 8);
     }
     free(buf);
