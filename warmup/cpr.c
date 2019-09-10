@@ -38,9 +38,8 @@ copy_file(char * location, const char * destination){
     int infile;
     int outfile;
     size_t ret;
-    size_t out;
     char * full_file;
-    full_file = strdup(destination);
+    full_file = (char*)destination;
 
     infile = open(location, O_RDONLY);
     if (infile == -1)
@@ -52,8 +51,7 @@ copy_file(char * location, const char * destination){
         char filename[1024];
         snprintf(filename, sizeof(filename), "%s/%s", destination, basename(location));
         outfile = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-        free(full_file);
-        full_file = strdup(filename);
+        full_file = filename;
 
         if (outfile == -1) {
             close(infile);
@@ -66,7 +64,7 @@ copy_file(char * location, const char * destination){
 
     close(infile);
     close(outfile);
-
+    int out;
     if ((out = chmod(full_file, get_stat(location)->st_mode) != 0)){
         syserror(chmod, full_file);
     }
@@ -99,12 +97,10 @@ make_path(const char *destination, const mode_t mode){
 }
 
 void
-copy_dir(const char *location, const char *destination)
+copy_dir(const char *location, const char *destination, int indent)
 {
     DIR *dir;
-    char * created_dir;
-    struct dirent * entry;
-    struct stat * loc_stat;
+    struct dirent *entry;
 
     if (!(dir = opendir(location))){
         syserror(opendir, location);
@@ -117,16 +113,18 @@ copy_dir(const char *location, const char *destination)
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
 
-            loc_stat = get_stat(buf);
+            char * created_dir;
+            struct stat * loc_stat = get_stat(buf);
             created_dir = make_dir(destination, entry->d_name, loc_stat->st_mode);
             free(loc_stat);
-            copy_dir(buf, created_dir);
+            copy_dir(buf, created_dir, indent + 2);
 //            int out;
 //            if ((out = chmod(created_dir, loc_stat->st_mode) != 0)){
 //                syserror(chmod, created_dir);
 //            }
 
         } else {
+            //printf("%*s- %s  ---  %s\n", indent, "", entry->d_name, location);
             copy_file(buf, destination);
         }
     }
@@ -158,9 +156,9 @@ main(int argc, char *argv[])
         }
     }
     else {
-        make_path(argv[2], buf->st_mode);
-        copy_dir(argv[1], argv[2]);
-//        chmod(argv[2], buf->st_mode);
+        make_path(argv[2], 0777);
+        copy_dir(argv[1], argv[2], 8);
+        chmod(argv[2], buf->st_mode);
     }
     free(buf);
 }
