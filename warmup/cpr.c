@@ -121,10 +121,10 @@ copy_dir(const char *location, const char *destination)
             created_dir = make_dir(destination, entry->d_name, loc_stat->st_mode);
             free(loc_stat);
             copy_dir(buf, created_dir);
-            int out;
-            if ((out = chmod(created_dir, loc_stat->st_mode) != 0)){
-                syserror(chmod, created_dir);
-            }
+//            int out;
+//            if ((out = chmod(created_dir, loc_stat->st_mode) != 0)){
+//                syserror(chmod, created_dir);
+//            }
 
         } else {
             copy_file(buf, destination);
@@ -160,7 +160,7 @@ main(int argc, char *argv[])
     else {
         make_path(argv[2], buf->st_mode);
         copy_dir(argv[1], argv[2]);
-        chmod(argv[2], buf->st_mode);
+//        chmod(argv[2], buf->st_mode);
     }
     free(buf);
 }
