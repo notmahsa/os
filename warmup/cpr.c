@@ -21,15 +21,15 @@ usage()
 struct stat *
 get_stat(const char * location)
 {
-    struct stat * buf;
-    buf = (struct stat *)malloc(sizeof(struct stat));
+    struct stat * st_buf;
+    st_buf = (struct stat *)malloc(sizeof(struct stat));
     int stat_out;
-    stat_out = stat(location, buf);
+    stat_out = stat(location, st_buf);
     if (stat_out != 0){
-        free(buf);
+        free(st_buf);
         syserror(stat, location);
     }
-    return buf;
+    return st_buf;
 }
 
 int
@@ -38,8 +38,9 @@ copy_file(char * location, const char * destination){
     int infile;
     int outfile;
     size_t ret;
+    size_t out;
     char * full_file;
-    full_file = (char*)destination;
+    full_file = strdup(destination);
 
     infile = open(location, O_RDONLY);
     if (infile == -1)
@@ -51,7 +52,8 @@ copy_file(char * location, const char * destination){
         char filename[1024];
         snprintf(filename, sizeof(filename), "%s/%s", destination, basename(location));
         outfile = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-        full_file = filename;
+        free(full_file);
+        full_file = strdup(filename);
 
         if (outfile == -1) {
             close(infile);
@@ -64,7 +66,7 @@ copy_file(char * location, const char * destination){
 
     close(infile);
     close(outfile);
-    int out;
+
     if ((out = chmod(full_file, get_stat(location)->st_mode) != 0)){
         syserror(chmod, full_file);
     }
@@ -97,10 +99,12 @@ make_path(const char *destination, const mode_t mode){
 }
 
 void
-copy_dir(const char *location, const char *destination, int indent)
+copy_dir(const char *location, const char *destination)
 {
     DIR *dir;
-    struct dirent *entry;
+    char * created_dir;
+    struct dirent * entry;
+    struct stat * loc_stat;
 
     if (!(dir = opendir(location))){
         syserror(opendir, location);
@@ -113,18 +117,16 @@ copy_dir(const char *location, const char *destination, int indent)
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
 
-            char * created_dir;
-            struct stat * loc_stat = get_stat(location);
+            loc_stat = get_stat(buf);
             created_dir = make_dir(destination, entry->d_name, 0777);
             free(loc_stat);
-            copy_dir(buf, created_dir, indent + 2);
-//            int out;
-//            if ((out = chmod(created_dir, loc_stat->st_mode) != 0)){
-//                syserror(chmod, created_dir);
-//            }
+            copy_dir(buf, created_dir);
+            int out;
+            if ((out = chmod(created_dir, loc_stat->st_mode) != 0)){
+                syserror(chmod, created_dir);
+            }
 
         } else {
-            //printf("%*s- %s  ---  %s\n", indent, "", entry->d_name, location);
             copy_file(buf, destination);
         }
     }
@@ -157,7 +159,7 @@ main(int argc, char *argv[])
     }
     else {
         make_path(argv[2], 0777);
-        copy_dir(argv[1], argv[2], 8);
+        copy_dir(argv[1], argv[2]);
         chmod(argv[2], buf->st_mode);
     }
     free(buf);
