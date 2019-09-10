@@ -65,7 +65,6 @@ copy_file(char * location, const char * destination){
     close(infile);
     close(outfile);
     int out;
-    mode_t temp_mode;
     if ((out = chmod(full_file, get_stat(location)->st_mode) != 0)){
         syserror(chmod, full_file);
     }
