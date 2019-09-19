@@ -22,8 +22,6 @@
 #define HT_NOT_FOUND 0
 #define HT_FOUND 01
 
-#define HT_INITIALIZER {0, 0, 0, 0, 0, NULL, NULL, NULL};
-
 typedef int (*comparison_t)(void*, void*, size_t);
 typedef size_t (*hash_t)(void*, size_t);
 
