@@ -7,7 +7,7 @@
 #include <dirent.h>
 #include <stdbool.h>
 #include <libgen.h>
-#include <string.h>
+#include <errno.h>
 #include "common.h"
 
 /* make sure to use syserror() when a system call fails. see common.h */
