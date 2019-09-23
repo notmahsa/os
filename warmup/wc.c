@@ -6,6 +6,54 @@
 #include "wc.h"
 
 
+#include <stdbool.h>
+#include <stddef.h>
+
+/****************** DEFINTIIONS ******************/
+
+#define HT_MINIMUM_CAPACITY 8
+#define HT_LOAD_FACTOR 5
+#define HT_MINIMUM_THRESHOLD (HT_MINIMUM_CAPACITY) * (HT_LOAD_FACTOR)
+
+#define HT_GROWTH_FACTOR 2
+#define HT_SHRINK_THRESHOLD (1 / 4)
+
+#define HT_ERROR -1
+#define HT_SUCCESS 0
+
+#define HT_UPDATED 1
+#define HT_INSERTED 0
+
+#define HT_NOT_FOUND 0
+#define HT_FOUND 01
+
+typedef int (*comparison_t)(void*, void*, size_t);
+typedef size_t (*hash_t)(void*, size_t);
+
+/****************** STRUCTURES ******************/
+
+typedef struct HTNode {
+	struct HTNode* next;
+	void* key;
+	void* value;
+
+} HTNode;
+
+typedef struct HashTable {
+	size_t size;
+	size_t threshold;
+	size_t capacity;
+
+	size_t key_size;
+	size_t value_size;
+
+	comparison_t compare;
+	hash_t hash;
+
+	HTNode** nodes;
+
+} HashTable;
+
 int ht_setup(HashTable* table,
 						 size_t key_size,
 						 size_t value_size,
