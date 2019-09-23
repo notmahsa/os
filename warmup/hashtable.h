@@ -44,7 +44,7 @@ typedef struct HashTable {
 
 	comparison_t compare;
 	hash_t hash;
-note
+
 	HTNode** nodes;
 
 } HashTable;
