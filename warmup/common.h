@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define TBD() do {							\
 		printf("%s:%d: %s: please implement this functionality\n", \
