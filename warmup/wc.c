@@ -1,36 +1,33 @@
+/*
+HASH CREDITS:
+    - Peter Goldsborough https://github.com/goldsborough
+    - York University, Computer Science http://www.cse.yorku.ca/~oz/hash.html
+*/
+
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include "common.h"
 #include "wc.h"
 
-
-#include <stdbool.h>
-#include <stddef.h>
-
-/****************** DEFINTIIONS ******************/
-
-#define HT_MINIMUM_CAPACITY 8
+#define HT_MIN_CAP 8
 #define HT_LOAD_FACTOR 5
-#define HT_MINIMUM_THRESHOLD (HT_MINIMUM_CAPACITY) * (HT_LOAD_FACTOR)
-
+#define HT_MIN_THRE (HT_MIN_CAP) * (HT_LOAD_FACTOR)
 #define HT_GROWTH_FACTOR 2
-#define HT_SHRINK_THRESHOLD (1 / 4)
-
+#define HT_SHRINK_THRE (1 / 4)
 #define HT_ERROR -1
 #define HT_SUCCESS 0
-
 #define HT_UPDATED 1
 #define HT_INSERTED 0
-
 #define HT_NOT_FOUND 0
 #define HT_FOUND 01
 
 typedef int (*comparison_t)(void*, void*, size_t);
 typedef size_t (*hash_t)(void*, size_t);
-
-/****************** STRUCTURES ******************/
 
 typedef struct HTNode {
 	struct HTNode* next;
@@ -53,9 +50,6 @@ typedef struct HashTable {
 	HTNode** nodes;
 
 } HashTable;
-
-
-/****************** PRIVATE ******************/
 
 int _ht_string_compare(void* first_key, void* second_key, size_t key_size) {
     char * first_key_char;
@@ -96,7 +90,7 @@ bool _ht_should_grow(HashTable* table) {
 
 bool _ht_should_shrink(HashTable* table) {
 	assert(table->size <= table->capacity);
-	return table->size == table->capacity * HT_SHRINK_THRESHOLD;
+	return table->size == table->capacity * HT_SHRINK_THRE;
 }
 
 HTNode*
@@ -172,9 +166,9 @@ int _ht_resize(HashTable* table, size_t new_capacity) {
 	HTNode** old;
 	size_t old_capacity;
 
-	if (new_capacity < HT_MINIMUM_CAPACITY) {
-		if (table->capacity > HT_MINIMUM_CAPACITY) {
-			new_capacity = HT_MINIMUM_CAPACITY;
+	if (new_capacity < HT_MIN_CAP) {
+		if (table->capacity > HT_MIN_CAP) {
+			new_capacity = HT_MIN_CAP;
 		} else {
 			/* NO-OP */
 			return HT_SUCCESS;
@@ -206,8 +200,8 @@ int ht_setup(HashTable* table,
 
 	if (table == NULL) return HT_ERROR;
 
-	if (capacity < HT_MINIMUM_CAPACITY) {
-		capacity = HT_MINIMUM_CAPACITY;
+	if (capacity < HT_MIN_CAP) {
+		capacity = HT_MIN_CAP;
 	}
 
 	if (_ht_allocate(table, capacity) == HT_ERROR) {
@@ -366,7 +360,7 @@ int ht_clear(HashTable* table) {
 	if (table->nodes == NULL) return HT_ERROR;
 
 	ht_destroy(table);
-	_ht_allocate(table, HT_MINIMUM_CAPACITY);
+	_ht_allocate(table, HT_MIN_CAP);
 	table->size = 0;
 
 	return HT_SUCCESS;
