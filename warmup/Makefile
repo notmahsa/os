@@ -21,7 +21,7 @@ test_point: point.o
 
 cpr: cpr.o
 
-test_wc: wc.o hashtable.o
+test_wc: wc.o
 
 depend:
 	$(CC) -MM *.c > .depend
