@@ -1,4 +1,3 @@
-#include "common.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -8,6 +7,8 @@
 #include <dirent.h>
 #include <stdbool.h>
 #include <libgen.h>
+#include <string.h>
+#include "common.h"
 
 /* make sure to use syserror() when a system call fails. see common.h */
 
