@@ -1,13 +1,13 @@
 # Created by https://www.gitignore.io/api/cmake,c
 
 ### CMake ###
-CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Makefile
-cmake_install.cmake
-install_manifest.txt
-CTestTestfile.cmake
+# CMakeCache.txt
+# CMakeFiles
+# CMakeScripts
+# Makefile
+# cmake_install.cmake
+# install_manifest.txt
+# CTestTestfile.cmake
 
 ### C ###
 # Object files
@@ -51,3 +51,4 @@ build/
 *.dSYM/
 wc-big*
 *run_big_test_wc
+
