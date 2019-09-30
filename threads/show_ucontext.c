@@ -119,13 +119,13 @@ main(int argc, char **argv)
 	printf("memory address of the variable err = %p\n",
 	       (void *)&err);
 	printf("number of bytes pushed to the stack between setcontext_called "
-	       "and err = %ld\n", (unsigned long)(&err - &setcontext_called));
+	       "and err = %ld\n", (unsigned long)((long long int)&setcontext_called - (long long int)&err));
 
 	printf("stack pointer register (RSP) stored in mycontext = 0x%lx\n",
 	       (unsigned long)mycontext.uc_mcontext.gregs[15]);
 
 	printf("number of bytes between err and the saved stack in mycontext "
-	       "= %ld\n", (unsigned long)(mycontext.uc_mcontext.gregs[15] - (long long int)&err));
+	       "= %ld\n", (unsigned long)((long long int)&err) - mycontext.uc_mcontext.gregs[15]);
 
 	/* QUESTION: what is the uc_stack field in mycontext? Note that this
 	 * field is used to store an alternate stack for use during signal
