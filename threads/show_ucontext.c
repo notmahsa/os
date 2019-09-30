@@ -96,7 +96,7 @@ main(int argc, char **argv)
 
 	/* first, think about code */
 	/* the program counter is called rip in x86-64 */
-	printf("memory address of main() = 0x%lx\n", (unsigned long)mycontext.uc_sigmask.rip);
+	printf("memory address of main() = 0x%lx\n", (unsigned long)mycontext.uc_mcontext.fpregs.rip);
 	printf("memory address of the program counter (RIP) saved "
 	       "in mycontext = 0x%lx\n",
 	       (unsigned long)-1);
