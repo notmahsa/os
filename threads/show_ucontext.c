@@ -96,10 +96,10 @@ main(int argc, char **argv)
 
 	/* first, think about code */
 	/* the program counter is called rip in x86-64 */
-	printf("memory address of main() = 0x%lx\n", (unsigned long)mycontext.uc_mcontext.fpregs->rip);
+	printf("memory address of main() = 0x%lx\n", (unsigned long)main);
 	printf("memory address of the program counter (RIP) saved "
 	       "in mycontext = 0x%lx\n",
-	       (unsigned long)-1);
+	       (unsigned long)mycontext.uc_mcontext.fpregs->rip);
 
 	/* now, think about parameters */
 	printf("argc = %d\n", -1);
