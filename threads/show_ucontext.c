@@ -119,7 +119,7 @@ main(int argc, char **argv)
 	printf("memory address of the variable err = %p\n",
 	       (void *)&err);
 	printf("number of bytes pushed to the stack between setcontext_called "
-	       "and err = %ld\n", (unsigned long)((long long int)&setcontext_called - (long long int)&err));
+	       "and err = %ld\n", (unsigned long)(&setcontext_called - &err));
 
 	printf("stack pointer register (RSP) stored in mycontext = 0x%lx\n",
 	       (unsigned long)mycontext.uc_mcontext.gregs[15]);
