@@ -125,7 +125,7 @@ main(int argc, char **argv)
 	       (unsigned long)mycontext.uc_mcontext.gregs[15]);
 
 	printf("number of bytes between err and the saved stack in mycontext "
-	       "= %ld\n", (unsigned long)(mycontext.uc_mcontext.gregs[15] - &err));
+	       "= %ld\n", (unsigned long)(mycontext.uc_mcontext.gregs[15] - (long long int)&err));
 
 	/* QUESTION: what is the uc_stack field in mycontext? Note that this
 	 * field is used to store an alternate stack for use during signal
