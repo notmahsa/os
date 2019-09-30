@@ -99,11 +99,11 @@ main(int argc, char **argv)
 	printf("memory address of main() = 0x%lx\n", (unsigned long)main);
 	printf("memory address of the program counter (RIP) saved "
 	       "in mycontext = 0x%lx\n",
-	       (unsigned long)mycontext.uc_mcontext.fpregs->rip);
+	       (unsigned long)mycontext.__fpregs_mem.rip);
 
 	/* now, think about parameters */
-	printf("argc = %d\n", -1);
-	printf("argv = %p\n", (void *)-1);
+	printf("argc = %d\n", argc);
+	printf("argv = %p\n", (void *)argv);
 	/* QUESTIONS: how are these parameters passed into the main function? 
 	 * are there any saved registers in mycontext that store the parameter
 	 * values above. why or why not? Hint: Use gdb, and then run
@@ -115,23 +115,23 @@ main(int argc, char **argv)
 	 * stack grow up or down? What are the stack related data in
 	 * mycontext.uc_mcontext.gregs[]? */
 	printf("memory address of the variable setcontext_called = %p\n",
-	       (void *)-1);
+	       (void *)&setcontext_called);
 	printf("memory address of the variable err = %p\n",
-	       (void *)-1);
+	       (void *)&err);
 	printf("number of bytes pushed to the stack between setcontext_called "
-	       "and err = %ld\n", (unsigned long)-1);
+	       "and err = %ld\n", (unsigned long)(&err - &setcontext_called));
 
 	printf("stack pointer register (RSP) stored in mycontext = 0x%lx\n",
-	       (unsigned long)-1);
+	       (unsigned long)mycontext.uc_mcontext.gregs[15]);
 
 	printf("number of bytes between err and the saved stack in mycontext "
-	       "= %ld\n", (unsigned long)-1);
+	       "= %ld\n", (unsigned long)(mycontext.uc_mcontext.gregs[15] - &err));
 
 	/* QUESTION: what is the uc_stack field in mycontext? Note that this
 	 * field is used to store an alternate stack for use during signal
 	 * handling, and is NOT the stack of the running thread. */
 	printf("value of uc_stack.ss_sp = 0x%lx\n",
-	       (unsigned long)-1);
+	       (unsigned long)mycontext.uc_stack.ss_sp);
 
 	/* Don't move on to the next part of the lab until you know how to
 	 * change the stack in a context when you manipulate a context to create
