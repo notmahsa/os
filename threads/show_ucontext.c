@@ -172,7 +172,7 @@ show_interrupt(void)
 	/* QUESTION: Are interrupts masked (i.e., disabled) in mycontext?
 	 * HINT: use sigismember below. */
 	printf("interrupt is disabled = %d\n",
-	       (unsigned int)sigismember(&mycontext.uc_sigmask, 8192));
+	       (unsigned int)sigismember(&mycontext.uc_sigmask, SIGALRM));
 
 	interrupts_off();
 
@@ -182,5 +182,5 @@ show_interrupt(void)
 	/* QUESTION: which fields of mycontext changed as a result of the
 	 * getcontext call above? */
 	printf("interrupt is disabled = %d\n",
-	       (unsigned int)sigismember(&mycontext.uc_sigmask, 8192));
+	       (unsigned int)sigismember(&mycontext.uc_sigmask, SIGALRM));
 }
