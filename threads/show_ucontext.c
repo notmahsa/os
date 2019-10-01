@@ -99,7 +99,7 @@ main(int argc, char **argv)
 	printf("memory address of main() = 0x%lx\n", (unsigned long)main);
 	printf("memory address of the program counter (RIP) saved "
 	       "in mycontext = 0x%lx\n",
-	       (unsigned long)mycontext.gregs[REG_RIP]);
+	       (unsigned long)mycontext.uc_mcontext.gregs[REG_RIP]);
 
 	/* now, think about parameters */
 	printf("argc = %d\n", argc);
