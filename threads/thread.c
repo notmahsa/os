@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <stdbool.h>
 #include "thread.h"
 #include "interrupt.h"
 
@@ -16,14 +17,14 @@
 
 struct ready_queue {
     Tid id;
-    struct ready_queue * next = NULL;
+    struct ready_queue * next;
 };
 
 /* This is the wait queue structure */
 struct wait_queue {
 	/* ... Fill this in Lab 3 ... */
 	Tid id;
-	struct wait_queue * next = NULL;
+	struct wait_queue * next;
 };
 
 /* This is the thread control block */
@@ -32,7 +33,7 @@ struct thread {
 	Tid id;
 	unsigned short int state;
 	void * parg = NULL;
-	void (*fn) (void *) = NULL;
+	void (*fn) (void *);
 
 };
 
@@ -56,8 +57,8 @@ thread_init(void)
     first->state = 0;
     first->id = 0;
 
-    threads_pointer_list[first.id] = first;
-    threads_exist[first.id] = true;
+    threads_pointer_list[first->id] = first;
+    threads_exist[first->id] = true;
     running = first;
 }
 
@@ -73,6 +74,7 @@ thread_id()
 Tid
 thread_stub(void (*fn) (void *), void *parg){
     fn(parg);
+    // thread_wakeup();
     return thread_id();
 }
 
@@ -92,9 +94,9 @@ thread_create(void (*fn) (void *), void *parg)
     err = getcontext(new_context);
     assert(!err);
 
-    new_context->uc_stack.ss_sp = new_stack;
-    new_context->uc_stack.ss_size = STACKSIZE;
-    new_context->uc_stack.ss_flags = 0;
+    new_context.uc_stack.ss_sp = new_stack;
+    new_context.uc_stack.ss_size = STACKSIZE;
+    new_context.uc_stack.ss_flags = 0;
 
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
@@ -121,11 +123,11 @@ thread_create(void (*fn) (void *), void *parg)
     new_thread->state = 1;
     new_thread->id = new_id;
 
-    threads_pointer_list[new_thread.id] = new_thread;
-    threads_exist[new_thread.id] = true;
-    thread_wait(new_thread.id);
+    threads_pointer_list[new_thread->id] = new_thread;
+    threads_exist[new_thread->id] = true;
+    thread_wait(new_thread->id);
 
-	return new_thread.id;
+	return new_thread->id;
 }
 
 Tid
@@ -298,5 +300,5 @@ int
 main(int argc, char **argv)
 {
     thread_init();
-    thread_create(printf, "HI THERE\n");
+    thread_create((void *)printf, "HI THERE\n");
 }
