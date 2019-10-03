@@ -80,7 +80,7 @@ thread_stub(void (*fn) (void *), void *parg){
 Tid
 thread_append_to_ready_queue(Tid id){
     if (!ready_head){
-        ready_queue * new_ready_node = malloc(sizeof(ready_queue));
+        struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
         new_ready_node->next = NULL;
         ready_head = new_ready_node;
@@ -94,7 +94,7 @@ thread_append_to_ready_queue(Tid id){
     }
     assert(current_node);
 
-    ready_queue * new_ready_node = malloc(sizeof(ready_queue));
+    struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
     new_ready_node->id = id;
     new_ready_node->next = NULL;
     current_node->next = new_ready_node;
@@ -105,14 +105,14 @@ thread_append_to_ready_queue(Tid id){
 Tid
 thread_pop_from_ready_queue(Tid id){
     if (ready_head->id == id){
-        ready_queue * temp_head = ready_head;
+        struct ready_queue * temp_head = ready_head;
         ready_head = ready_head->next;
         free(temp_head);
         return id;
     }
 
-    ready_queue * current_node = ready_head;
-    ready_queue * previous_node = NULL;
+    struct ready_queue * current_node = ready_head;
+    struct ready_queue * previous_node = NULL;
 
     while (current_node && current_node->next){
         if (current_node->next->id == id){
@@ -126,7 +126,7 @@ thread_pop_from_ready_queue(Tid id){
         return THREAD_INVALID;
     }
 
-    ready_queue * temp_next = current_node->next;
+    struct ready_queue * temp_next = current_node->next;
     free(current_node);
     previous_node->next = temp_next;
 
