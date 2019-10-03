@@ -138,14 +138,14 @@ main(int argc, char **argv)
 	 * change the stack in a context when you manipulate a context to create
 	 * a new thread. */
 
+    thread_init();
+    thread_create((void *)printf, "HI THERE\n");
+
 	/* now we will try to understand how setcontext works */
 	setcontext_called = 1;
-	//call_setcontext(&mycontext);
+	call_setcontext(&mycontext);
 	/* QUESTION: why does the program not fail at the assert below? */
-	// assert(0);
-
-	thread_init();
-    thread_create((void *)printf, "HI THERE\n");
+	assert(0);
 }
 
 static void
