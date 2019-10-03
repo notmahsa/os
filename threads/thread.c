@@ -32,7 +32,7 @@ struct thread {
 	ucontext_t context;
 	Tid id;
 	unsigned short int state;
-	void * parg = NULL;
+	void * parg;
 	void (*fn) (void *);
 
 };
@@ -91,7 +91,7 @@ thread_create(void (*fn) (void *), void *parg)
 
     ucontext_t new_context = { 0 };
 
-    err = getcontext(new_context);
+    err = getcontext(&new_context);
     assert(!err);
 
     new_context.uc_stack.ss_sp = new_stack;
