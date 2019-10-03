@@ -142,7 +142,7 @@ main(int argc, char **argv)
 	setcontext_called = 1;
 	call_setcontext(&mycontext);
 	/* QUESTION: why does the program not fail at the assert below? */
-	assert(0);
+	// assert(0);
 
 	thread_init();
     thread_create((void *)printf, "HI THERE\n");
