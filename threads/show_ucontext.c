@@ -140,7 +140,7 @@ main(int argc, char **argv)
 
 	/* now we will try to understand how setcontext works */
 	setcontext_called = 1;
-	call_setcontext(&mycontext);
+	//call_setcontext(&mycontext);
 	/* QUESTION: why does the program not fail at the assert below? */
 	// assert(0);
 
