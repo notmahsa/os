@@ -193,6 +193,10 @@ thread_yield(Tid want_tid)
         return running->id;
     }
 
+    if (tid < 0 || tid >= THREAD_MAX_THREADS){
+        return THREAD_INVALID;
+    }
+
     int err;
     volatile int setcontext_called = 0;
     struct thread * next_thread_to_run;
