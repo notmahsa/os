@@ -189,10 +189,10 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
-    if (want_tid == THREAD_SELF){
+    if (want_tid == THREAD_SELF || want_tid == running->id){
         return running->id;
     }
-    
+
     int err;
     volatile int setcontext_called = 0;
     struct thread * next_thread_to_run;
