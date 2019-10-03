@@ -98,14 +98,14 @@ thread_create(void (*fn) (void *), void *parg)
     new_context.uc_stack.ss_size = STACKSIZE;
     new_context.uc_stack.ss_flags = 0;
 
-    if (sigemptyset(&new_context->uc_sigmask) < 0)
+    if (sigemptyset(&new_context.uc_sigmask) < 0)
         return THREAD_FAILED;
 
-    new_context.uc_mcontext.gregs[REG_RIP] = thread_stub;
-    new_context.uc_mcontext.gregs[REG_RSI] = fn;
-    new_context.uc_mcontext.gregs[REG_RDI] = parg;
+    new_context.uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
+    new_context.uc_mcontext.gregs[REG_RSI] = (long long)fn;
+    new_context.uc_mcontext.gregs[REG_RDI] = (long long)parg;
 
-    printf("Context is %p\n", new_context);
+    printf("Context is %p\n", &new_context);
 
     short unsigned int new_id = -1;
     for (int i = 1; i < THREAD_MAX_THREADS; i++){
@@ -119,7 +119,7 @@ thread_create(void (*fn) (void *), void *parg)
         return THREAD_NOMORE;
     }
 
-    new_thread->context = context;
+    new_thread->context = new_context;
     new_thread->state = 1;
     new_thread->id = new_id;
 
