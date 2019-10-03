@@ -150,7 +150,7 @@ thread_create(void (*fn) (void *), void *parg)
     assert(!err);
 
     new_context.uc_stack.ss_sp = new_stack;
-    new_context.uc_stack.ss_size = THREAD_MIN_STACK_SIZE;
+    new_context.uc_stack.ss_size = THREAD_MIN_STACK;
     new_context.uc_stack.ss_flags = 0;
 
     if (sigemptyset(&new_context.uc_sigmask) < 0)
@@ -210,7 +210,7 @@ thread_yield(Tid want_tid)
     }
 
     running->state = 1;
-    running->context.gregs[REG_RIP] = new_context.ucontext_t.gregs[REG_RIP];
+    running->context.uc_mcontext.gregs[REG_RIP] = new_context.ucontext_t.gregs[REG_RIP];
     thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
@@ -228,7 +228,7 @@ thread_yield(Tid want_tid)
 
     next_thread_to_run->state = 0;
     running = next_thread_to_run;
-    setcontext(&running);
+    setcontext(running);
     setcontext_called = 1;
 
 	return THREAD_FAILED;
