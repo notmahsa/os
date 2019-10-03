@@ -237,7 +237,27 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
-	TBD();
+    running->state = 4;
+
+    threads_exist[running->id] = 0;
+    threads_pointer_list[running->id] = NULL;
+    free(running->context.uc_stack.ss_sp);
+    thread_pop_from_ready_queue(running->id);
+    free(running);
+    running = NULL;
+
+    if (ready_head){
+        struct thread * next_thread_to_run = NULL;
+        struct ready_queue * temp_head = ready_head->next;
+        next_thread_to_run = threads_pointer_list[ready_head->id];
+        free(ready_head);
+        ready_head = temp_head;
+        next_thread_to_run->state = 0;
+        running = next_thread_to_run;
+        setcontext(&running->context);
+    }
+
+    assert(0);
 }
 
 Tid
