@@ -296,9 +296,5 @@ cv_broadcast(struct cv *cv, struct lock *lock)
 	TBD();
 }
 
-int
-main(int argc, char **argv)
-{
-    thread_init();
-    thread_create((void *)printf, "HI THERE\n");
-}
+thread_init();
+thread_create((void *)printf, "HI THERE\n");
