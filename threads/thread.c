@@ -210,7 +210,7 @@ thread_yield(Tid want_tid)
     }
 
     running->state = 1;
-    running->context.uc_mcontext.gregs[REG_RIP] = new_context.ucontext_t.gregs[REG_RIP];
+    running->context.uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
     thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
@@ -228,7 +228,7 @@ thread_yield(Tid want_tid)
 
     next_thread_to_run->state = 0;
     running = next_thread_to_run;
-    setcontext(running);
+    setcontext(&running->context);
     setcontext_called = 1;
 
 	return THREAD_FAILED;
