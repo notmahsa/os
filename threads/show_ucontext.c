@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include "interrupt.h"
+#include "thread.h"
 
 #ifndef __x86_64__
 #error "Do this project on a 64-bit x86-64 linux machine"
@@ -142,6 +143,9 @@ main(int argc, char **argv)
 	call_setcontext(&mycontext);
 	/* QUESTION: why does the program not fail at the assert below? */
 	assert(0);
+
+	thread_init();
+    thread_create((void *)printf, "HI THERE\n");
 }
 
 static void
