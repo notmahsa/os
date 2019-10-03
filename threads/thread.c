@@ -70,7 +70,7 @@ thread_id()
 	return THREAD_INVALID;
 }
 
-Tid
+void
 thread_stub(void (*fn) (void *), void *parg){
     fn(parg);
     // thread_exit();
