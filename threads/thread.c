@@ -138,7 +138,7 @@ thread_create(void (*fn) (void *), void *parg)
 {
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
-    void * new_stack = malloc(THREAD_MIN_STACK_SIZE);
+    void * new_stack = malloc(THREAD_MIN_STACK);
 
     if  (!new_stack || !new_thread){
         return THREAD_NOMEMORY;
@@ -189,6 +189,7 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
+    int err;
     volatile int setcontext_called = 0;
     struct thread * next_thread_to_run;
 
@@ -201,15 +202,15 @@ thread_yield(Tid want_tid)
     assert(!err);
 
     if (setcontext_called == 1){
-        return running.id;
+        return running->id;
     }
 
     if (want_tid == THREAD_SELF){
-        return running.id;
+        return running->id;
     }
 
-    running.state = 1;
-    running.uc_mcontext.gregs[REG_RIP] = new_context.ucontext_t.gregs[REG_RIP];
+    running->state = 1;
+    running->context.gregs[REG_RIP] = new_context.ucontext_t.gregs[REG_RIP];
     thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
