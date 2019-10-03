@@ -74,7 +74,7 @@ Tid
 thread_stub(void (*fn) (void *), void *parg){
     fn(parg);
     // thread_exit();
-    return thread_id();
+    thread_exit();
 }
 
 Tid
@@ -238,7 +238,6 @@ void
 thread_exit()
 {
     running->state = 4;
-
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
     free(running->context.uc_stack.ss_sp);
@@ -263,8 +262,19 @@ thread_exit()
 Tid
 thread_kill(Tid tid)
 {
-	TBD();
-	return THREAD_FAILED;
+	if (!threads_exist[tid])
+	    return THREAD_FAILED;
+	thread_pop_from_ready_queue(tid);
+
+	struct thread * thread_to_be_killed = threads_pointer_list[tid];
+    thread_to_be_killed->state = 4;
+    threads_exist[thread_to_be_killed->id] = 0;
+    free(thread_to_be_killed->context.uc_stack.ss_sp);
+    thread_pop_from_ready_queue(thread_to_be_killed->id);
+    free(thread_to_be_killed);
+    threads_pointer_list[tid] = NULL;
+
+    return tid;
 }
 
 /*******************************************************************

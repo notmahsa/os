@@ -138,9 +138,9 @@ main(int argc, char **argv)
 	 * change the stack in a context when you manipulate a context to create
 	 * a new thread. */
 
-    thread_init();
-    thread_create((void *)printf, "HI THERE\n");
-    thread_yield(1);
+//    thread_init();
+//    thread_create((void *)printf, "HI THERE\n");
+//    thread_yield(1);
 
 	/* now we will try to understand how setcontext works */
 	setcontext_called = 1;
