@@ -13,7 +13,6 @@
  4  T  stopped, either by a job control signal or because
                it is being traced
 */
-#define STACKSIZE 4096
 
 struct ready_queue {
     Tid id;
@@ -47,19 +46,19 @@ void
 thread_init(void)
 {
 	int err;
-	struct thread * first = malloc(sizeof(struct thread));
+	struct thread * first_thread = malloc(sizeof(struct thread));
 	ucontext_t context = { 0 };
 
 	err = getcontext(&context);
     assert(!err);
 
-    first->context = context;
-    first->state = 0;
-    first->id = 0;
+    first_thread->context = context;
+    first_thread->state = 0;
+    first_thread->id = 0;
 
-    threads_pointer_list[first->id] = first;
-    threads_exist[first->id] = true;
-    running = first;
+    threads_pointer_list[first_thread->id] = first_thread;
+    threads_exist[first_thread->id] = true;
+    running = first_thread;
 }
 
 Tid
@@ -74,8 +73,64 @@ thread_id()
 Tid
 thread_stub(void (*fn) (void *), void *parg){
     fn(parg);
-    // thread_wakeup();
+    // thread_exit();
     return thread_id();
+}
+
+Tid
+thread_append_to_ready_queue(Tid id){
+    if (!ready_head){
+        ready_queue * new_ready_node = malloc(sizeof(ready_queue));
+        new_ready_node->id = id;
+        new_ready_node->next = NULL;
+        ready_head = new_ready_node;
+
+        return id;
+    }
+
+    struct ready_queue * current_node = ready_head;
+    while (current_node->next && current_node->next->next){
+        current_node = current_node->next;
+    }
+    assert(current_node);
+
+    ready_queue * new_ready_node = malloc(sizeof(ready_queue));
+    new_ready_node->id = id;
+    new_ready_node->next = NULL;
+    current_node->next = new_ready_node;
+
+    return id;
+}
+
+Tid
+thread_pop_from_ready_queue(Tid id){
+    if (ready_head->id == id){
+        ready_queue * temp_head = ready_head;
+        ready_head = ready_head->next;
+        free(temp_head);
+        return id;
+    }
+
+    ready_queue * current_node = ready_head;
+    ready_queue * previous_node = NULL;
+
+    while (current_node && current_node->next){
+        if (current_node->next->id == id){
+            previous_node = current_node;
+            current_node = current_node->next;
+            break;
+        }
+    }
+
+    if (!previous_node){
+        return THREAD_INVALID;
+    }
+
+    ready_queue * temp_next = current_node->next;
+    free(current_node);
+    previous_node->next = temp_next;
+
+    return id;
 }
 
 Tid
@@ -83,7 +138,7 @@ thread_create(void (*fn) (void *), void *parg)
 {
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
-    void * new_stack = malloc(STACKSIZE);
+    void * new_stack = malloc(THREAD_MIN_STACK_SIZE);
 
     if  (!new_stack || !new_thread){
         return THREAD_NOMEMORY;
@@ -95,7 +150,7 @@ thread_create(void (*fn) (void *), void *parg)
     assert(!err);
 
     new_context.uc_stack.ss_sp = new_stack;
-    new_context.uc_stack.ss_size = STACKSIZE;
+    new_context.uc_stack.ss_size = THREAD_MIN_STACK_SIZE;
     new_context.uc_stack.ss_flags = 0;
 
     if (sigemptyset(&new_context.uc_sigmask) < 0)
@@ -125,7 +180,8 @@ thread_create(void (*fn) (void *), void *parg)
 
     threads_pointer_list[new_thread->id] = new_thread;
     threads_exist[new_thread->id] = true;
-    thread_wait(new_thread->id);
+
+    thread_append_to_ready_queue(new_thread->id);
 
 	return new_thread->id;
 }
@@ -133,7 +189,47 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
-	TBD();
+    volatile int setcontext_called = 0;
+    struct thread * next_thread_to_run;
+
+    if (!ready_head){
+        return THREAD_NONE;
+    }
+
+    ucontext_t new_context = { 0 };
+    err = getcontext(&new_context);
+    assert(!err);
+
+    if (setcontext_called == 1){
+        return running.id;
+    }
+
+    if (want_tid == THREAD_SELF){
+        return running.id;
+    }
+
+    running.state = 1;
+    running.uc_mcontext.gregs[REG_RIP] = new_context.ucontext_t.gregs[REG_RIP];
+    thread_append_to_ready_queue(running->id);
+
+    if (want_tid == THREAD_ANY){
+        struct ready_queue * temp_head = ready_head->next;
+        next_thread_to_run = threads_pointer_list[ready_head->id];
+        free(ready_head);
+        ready_head = temp_head;
+    }
+    else{
+        if (thread_pop_from_ready_queue(want_tid) == THREAD_INVALID){
+            return THREAD_INVALID;
+        }
+        next_thread_to_run = threads_pointer_list[want_tid];
+    }
+
+    next_thread_to_run->state = 0;
+    running = next_thread_to_run;
+    setcontext(&running);
+    setcontext_called = 1;
+
 	return THREAD_FAILED;
 }
 
