@@ -141,6 +141,8 @@ main(int argc, char **argv)
 //    thread_init();
 //    thread_create((void *)printf, "HI THERE\n");
 //    thread_yield(1);
+// type = enum {THREAD_ANY = -1, THREAD_SELF = -2, THREAD_INVALID = -3, THREAD_NONE = -4,
+//     THREAD_NOMORE = -5, THREAD_NOMEMORY = -6, THREAD_FAILED = -7}
 
 	/* now we will try to understand how setcontext works */
 	setcontext_called = 1;
