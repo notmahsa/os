@@ -295,6 +295,3 @@ cv_broadcast(struct cv *cv, struct lock *lock)
 
 	TBD();
 }
-
-thread_init();
-thread_create((void *)printf, "HI THERE\n");
