@@ -7,8 +7,8 @@
 #include "test_thread.h"
 
 void
-thread_stubbb(void (*fn)()){
-    *fn();
+thread_stubbb(void (*fn)(int, char**)){
+    (*fn)();
     // fn(parg);
     // thread_exit();
     // thread_exit();
@@ -31,7 +31,7 @@ main(int argc, char **argv)
         new_context->uc_link = 0;
         new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stubbb;
         new_context->uc_mcontext.gregs[REG_RSI] = (long long)main;
-        // new_context->uc_mcontext.gregs[REG_RDI] = (long long)NULL;
+        new_context->uc_mcontext.gregs[REG_RDI] = 0;
         setcontext_called = 1;
         setcontext(new_context);
     }
