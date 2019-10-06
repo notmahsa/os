@@ -29,8 +29,8 @@ main(int argc, char **argv)
         new_context->uc_stack.ss_flags = 0;
         new_context->uc_link = 0;
         new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
-        new_context->uc_mcontext.gregs[REG_RSI] = NULL;
-        new_context->uc_mcontext.gregs[REG_RDI] = NULL;
+        new_context->uc_mcontext.gregs[REG_RSI] = (long long)NULL;
+        new_context->uc_mcontext.gregs[REG_RDI] = (long long)NULL;
         setcontext_called = 1;
         setcontext(new_context);
     }
