@@ -7,8 +7,8 @@
 #include "test_thread.h"
 
 void
-thread_stubbb(void (*fn)(int, char**)){
-    (*fn)();
+thread_stubbb(void (*fn)(int, char**), int argc, char **argv){
+    (*fn)(argc, argv);
     // fn(parg);
     // thread_exit();
     // thread_exit();
