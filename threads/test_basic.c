@@ -12,6 +12,7 @@ main(int argc, char **argv)
 //	thread_init();
 //	test_basic();
 	if (setcontext_called == 0){
+	int err;
 	    ucontext_t * new_context = malloc(sizeof(ucontext_t));
         err = getcontext(new_context);
         assert(!err);
