@@ -48,7 +48,6 @@ thread_init(void)
 	int err;
 	struct thread * first_thread = malloc(sizeof(struct thread));
 	ucontext_t * context = malloc(sizeof(ucontext_t));
-	*context = { 0 };
 
 	err = getcontext(context);
     assert(!err);
@@ -146,7 +145,6 @@ thread_create(void (*fn) (void *), void *parg)
     }
 
     ucontext_t * new_context = malloc(sizeof(ucontext_t));
-    *new_context = { 0 };
 
     err = getcontext(new_context);
     assert(!err);
