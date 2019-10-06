@@ -157,8 +157,8 @@ thread_create(void (*fn) (void *), void *parg)
         return THREAD_FAILED;
 
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
-    new_context->uc_mcontext.gregs[REG_RSI] = (long long)fn;
-    new_context->uc_mcontext.gregs[REG_RDI] = (long long)parg;
+    new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
+    new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
 
     printf("Context is %p\n", new_context);
 
