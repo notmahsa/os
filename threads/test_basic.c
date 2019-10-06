@@ -29,7 +29,7 @@ main(int argc, char **argv)
         new_context->uc_stack.ss_size = 1024;
         new_context->uc_stack.ss_flags = 0;
         new_context->uc_link = 0;
-        new_context->uc_mcontext.gregs[REG_RIP] = (long long)main;
+        new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stubbb;
         new_context->uc_mcontext.gregs[REG_RDI] = 1234;
         setcontext_called = 1;
         setcontext(new_context);
