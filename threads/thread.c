@@ -156,7 +156,7 @@ thread_create(void (*fn) (void *), void *parg)
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
 
-    new_context->uc_mcontext.gregs[REG_RBP] = (long long)new_stack;
+    new_context->uc_mcontext.gregs[REG_RBP] = running->context->uc_mcontext.gregs[REG_RBP];
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
@@ -232,6 +232,7 @@ thread_yield(Tid want_tid)
     }
 
     next_thread_to_run->state = 0;
+    next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = &running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
     setcontext_called = 1;
     setcontext(running->context);
