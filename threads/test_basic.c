@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include "thread.h"
 #include "test_thread.h"
