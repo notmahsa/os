@@ -72,8 +72,7 @@ thread_id()
 
 void
 thread_stub(void (*fn) (void *), void *parg){
-    fn(parg);
-    // thread_exit();
+    (*fn)(parg);
     thread_exit();
 }
 
