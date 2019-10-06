@@ -28,7 +28,7 @@ struct wait_queue {
 
 /* This is the thread control block */
 struct thread {
-	ucontext_t context;
+	ucontext_t * context;
 	Tid id;
 	unsigned short int state;
 	void * parg;
@@ -47,9 +47,10 @@ thread_init(void)
 {
 	int err;
 	struct thread * first_thread = malloc(sizeof(struct thread));
-	ucontext_t context = { 0 };
+	ucontext_t * context = malloc(sizeof(ucontext_t));
+	*context = { 0 };
 
-	err = getcontext(&context);
+	err = getcontext(context);
     assert(!err);
 
     first_thread->context = context;
@@ -144,23 +145,24 @@ thread_create(void (*fn) (void *), void *parg)
         return THREAD_NOMEMORY;
     }
 
-    ucontext_t new_context = { 0 };
+    ucontext_t * new_context = malloc(sizeof(ucontext_t));
+    *new_context = { 0 };
 
-    err = getcontext(&new_context);
+    err = getcontext(new_context);
     assert(!err);
 
-    new_context.uc_stack.ss_sp = new_stack;
-    new_context.uc_stack.ss_size = THREAD_MIN_STACK;
-    new_context.uc_stack.ss_flags = 0;
+    new_context->uc_stack.ss_sp = new_stack;
+    new_context->uc_stack.ss_size = THREAD_MIN_STACK;
+    new_context->uc_stack.ss_flags = 0;
 
-    if (sigemptyset(&new_context.uc_sigmask) < 0)
+    if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
 
-    new_context.uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
-    new_context.uc_mcontext.gregs[REG_RSI] = (long long)fn;
-    new_context.uc_mcontext.gregs[REG_RDI] = (long long)parg;
+    new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
+    new_context->uc_mcontext.gregs[REG_RSI] = (long long)fn;
+    new_context->uc_mcontext.gregs[REG_RDI] = (long long)parg;
 
-    printf("Context is %p\n", &new_context);
+    printf("Context is %p\n", new_context);
 
     short unsigned int new_id = -1;
     for (int i = 1; i < THREAD_MAX_THREADS; i++){
@@ -214,7 +216,7 @@ thread_yield(Tid want_tid)
     }
 
     running->state = 1;
-    running->context.uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
+    running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
     thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
@@ -232,7 +234,7 @@ thread_yield(Tid want_tid)
 
     next_thread_to_run->state = 0;
     running = next_thread_to_run;
-    setcontext(&running->context);
+    setcontext(running->context);
     setcontext_called = 1;
 
 	return THREAD_FAILED;
@@ -244,7 +246,8 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-    free(running->context.uc_stack.ss_sp);
+    free(running->context->uc_stack.ss_sp);
+    free(running->context);
     thread_pop_from_ready_queue(running->id);
     free(running);
     running = NULL;
@@ -257,7 +260,7 @@ thread_exit()
         ready_head = temp_head;
         next_thread_to_run->state = 0;
         running = next_thread_to_run;
-        setcontext(&running->context);
+        setcontext(running->context);
     }
 
     assert(0);
@@ -273,7 +276,8 @@ thread_kill(Tid tid)
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
     thread_to_be_killed->state = 4;
     threads_exist[thread_to_be_killed->id] = 0;
-    free(thread_to_be_killed->context.uc_stack.ss_sp);
+    free(thread_to_be_killed->context->uc_stack.ss_sp);
+    free(thread_to_be_killed->context);
     thread_pop_from_ready_queue(thread_to_be_killed->id);
     free(thread_to_be_killed);
     threads_pointer_list[tid] = NULL;
