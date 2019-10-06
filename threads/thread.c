@@ -193,7 +193,7 @@ thread_yield(Tid want_tid)
         return running->id;
     }
 
-    if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS)){
+    if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
         return THREAD_INVALID;
     }
 
