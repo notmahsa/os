@@ -8,7 +8,7 @@
 
 void
 thread_stubbb(void (*fn)()){
-    fn();
+    *fn();
     // fn(parg);
     // thread_exit();
     // thread_exit();
