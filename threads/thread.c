@@ -152,6 +152,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
+    new_context->uc_link = 0;
 
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
@@ -232,8 +233,8 @@ thread_yield(Tid want_tid)
 
     next_thread_to_run->state = 0;
     running = next_thread_to_run;
-    setcontext(running->context);
     setcontext_called = 1;
+    setcontext(running->context);
 
 	return THREAD_FAILED;
 }
