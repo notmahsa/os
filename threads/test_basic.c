@@ -22,6 +22,7 @@ main(int argc, char **argv)
 //	test_basic();
 	if (setcontext_called == 0){
 	    int err;
+	    int arg = 1234;
 	    ucontext_t * new_context = malloc(sizeof(ucontext_t));
         err = getcontext(new_context);
         assert(!err);
@@ -30,7 +31,7 @@ main(int argc, char **argv)
         new_context->uc_stack.ss_flags = 0;
         new_context->uc_link = 0;
         new_context->uc_mcontext.gregs[REG_RIP] = (long long)main;
-        new_context->uc_mcontext.gregs[REG_RSI] = 1234;
+        new_context->uc_mcontext.gregs[REG_RSI] = (long long)&arg;
         setcontext_called = 1;
         setcontext(new_context);
     }
