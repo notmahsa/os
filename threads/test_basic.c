@@ -35,7 +35,7 @@ main(int argc, char **argv)
         setcontext(new_context);
     }
     else {
-        printf("Got here!\n");
+        printf("Got here! %d\n", argc);
     }
 
 	return 0;
