@@ -1,8 +1,8 @@
-//#include <assert.h>
-//#include <stdlib.h>
-//#include <ucontext.h>
-//#include <stdio.h>
-//#include <stdbool.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <ucontext.h>
+#include <stdio.h>
+#include <stdbool.h>
 #include "thread.h"
 #include "test_thread.h"
 
@@ -36,7 +36,7 @@ main(int argc, char **argv)
         new_context->uc_stack.ss_flags = 0;
         new_context->uc_link = 0;
         new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stubbb;
-        new_context->uc_mcontext.gregs[REG_RDI] = print;
+        new_context->uc_mcontext.gregs[REG_RDI] = (long long)print;
         new_context->uc_mcontext.gregs[REG_RDI] = 123;
         setcontext_called = 1;
         setcontext(new_context);
