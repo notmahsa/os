@@ -236,6 +236,10 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
+    if (running->state == 3){
+        thread_exit();
+    }
+    
     if (!running){
         return THREAD_FAILED;
     }
@@ -272,6 +276,9 @@ thread_yield(Tid want_tid)
 
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
+        if (next_thread_to_run->id == 0){
+            thread_kill(running->id);
+        }
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
