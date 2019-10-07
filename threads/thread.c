@@ -171,6 +171,22 @@ thread_create(void (*fn) (void *), void *parg)
         return THREAD_NOMEMORY;
     }
 
+    short unsigned int new_id = -1;
+    for (int i = 1; i < THREAD_MAX_THREADS; i++){
+        if (threads_exist[i] == false){
+            new_id = i;
+            break;
+        }
+    }
+
+    if (new_id == -1){
+        printf("id %d in max %d\n", THREAD_NOMORE, THREAD_MAX_THREADS);
+        free(new_stack);
+        free(new_thread);
+        free(new_context);
+        return THREAD_NOMORE;
+    }
+
     err = getcontext(new_context);
     assert(!err);
 
@@ -191,19 +207,6 @@ thread_create(void (*fn) (void *), void *parg)
 
     // printf("Context is %p\n", new_context);
 
-    short unsigned int new_id = -1;
-    for (int i = 1; i < THREAD_MAX_THREADS; i++){
-        if (threads_exist[i] == false){
-            new_id = i;
-            break;
-        }
-    }
-
-    if (new_id == -1){
-        printf("id %d in max %d\n", THREAD_NOMORE, THREAD_MAX_THREADS);
-        return THREAD_NOMORE;
-    }
-
     new_thread->context = new_context;
     new_thread->state = 1;
     new_thread->id = new_id;
@@ -212,6 +215,7 @@ thread_create(void (*fn) (void *), void *parg)
     threads_exist[new_thread->id] = true;
     thread_append_to_ready_queue(new_thread->id);
 
+    printf("LOLOLOL id %d\n", new_thread->id);
 	return new_thread->id;
 }
 
