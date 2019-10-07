@@ -78,7 +78,6 @@ thread_stub(void (*fn) (void *), void *parg){
 
 void
 thread_append_to_ready_queue(Tid id){
-    // printf("Appending %d\n", id);
     if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
@@ -180,7 +179,6 @@ thread_create(void (*fn) (void *), void *parg)
     }
 
     if (new_id == -1){
-        printf("id %d in max %d\n", THREAD_NOMORE, THREAD_MAX_THREADS);
         free(new_stack);
         free(new_thread);
         free(new_context);
@@ -195,17 +193,14 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     new_context->uc_link = 0;
 
-//    if (sigemptyset(&new_context->uc_sigmask) < 0)
-//        return THREAD_FAILED;
+    if (sigemptyset(&new_context->uc_sigmask) < 0)
+        return THREAD_FAILED;
 
-    // (new_stack + new_context->uc_stack.ss_size - 8);
     new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - ((unsigned long)new_stack % (unsigned long)16) - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
     new_context->uc_mcontext.gregs[REG_RBP] = (long long)new_stack;
-
-    // printf("Context is %p\n", new_context);
 
     new_thread->context = new_context;
     new_thread->state = 1;
@@ -215,7 +210,6 @@ thread_create(void (*fn) (void *), void *parg)
     threads_exist[new_thread->id] = true;
     thread_append_to_ready_queue(new_thread->id);
 
-    printf("LOLOLOL id %d %d\n", new_thread->id, new_id);
 	return new_thread->id;
 }
 
