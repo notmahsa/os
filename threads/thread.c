@@ -202,6 +202,7 @@ thread_create(void (*fn) (void *), void *parg)
     threads_pointer_list[new_thread->id] = new_thread;
     threads_exist[new_thread->id] = true;
 
+    thread_pop_from_ready_queue(new_thread->id);
     thread_append_to_ready_queue(new_thread->id);
 
 	return new_thread->id;
