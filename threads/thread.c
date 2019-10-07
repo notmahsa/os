@@ -78,7 +78,7 @@ thread_stub(void (*fn) (void *), void *parg){
 
 void
 thread_append_to_ready_queue(Tid id){
-    printf("Appending %d\n", id);
+    // printf("Appending %d\n", id);
     if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
@@ -212,7 +212,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
     new_context->uc_mcontext.gregs[REG_RBP] = (long long)new_stack;
 
-    printf("Context is %p\n", new_context);
+    // printf("Context is %p\n", new_context);
 
     short unsigned int new_id = -1;
     for (int i = 1; i < THREAD_MAX_THREADS; i++){
