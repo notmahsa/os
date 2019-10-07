@@ -250,7 +250,7 @@ thread_yield(Tid want_tid)
     }
 
     next_thread_to_run->state = 0;
-    next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
+    // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
     setcontext_called = 1;
     setcontext(running->context);
