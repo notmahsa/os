@@ -200,7 +200,7 @@ thread_create(void (*fn) (void *), void *parg)
     }
 
     if (new_id == -1){
-        printf("id %d in max %d\n", i, THREAD_MAX_THREADS);
+        printf("id %d in max %d\n", THREAD_NOMORE, THREAD_MAX_THREADS);
         return THREAD_NOMORE;
     }
 
