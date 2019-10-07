@@ -79,7 +79,7 @@ thread_stub(void (*fn) (void *), void *parg){
 void
 thread_append_to_ready_queue(Tid id){
     printf("Appending %d\n", id);
-    if (!ready_head){
+    if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
         new_ready_node->next = NULL;
