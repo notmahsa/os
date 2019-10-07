@@ -33,7 +33,7 @@ struct thread {
 	unsigned short int state;
 	void * parg;
 	void (*fn) (void *);
-
+    void * p_stack;
 };
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
@@ -46,19 +46,19 @@ void
 thread_init(void)
 {
 	int err;
-	struct thread * first_thread = malloc(sizeof(struct thread));
-	ucontext_t * context = malloc(sizeof(ucontext_t));
-
-	err = getcontext(context);
-    assert(!err);
+	struct thread * first_thread = (struct thread *)malloc(sizeof(struct thread));
+	ucontext_t * context = (ucontext_t *)malloc(sizeof(ucontext_t));
 
     first_thread->context = context;
     first_thread->state = 0;
     first_thread->id = 0;
+    first_thread->p_stack = NULL;
 
     threads_pointer_list[first_thread->id] = first_thread;
     threads_exist[first_thread->id] = true;
     running = first_thread;
+    err = getcontext(context);
+    assert(!err);
 }
 
 Tid
@@ -72,8 +72,10 @@ thread_id()
 
 void
 thread_stub(void (*fn) (void *), void *parg){
+    Tid ret;
     (*fn)(parg);
     thread_exit();
+    assert(0);
 }
 
 Tid
@@ -137,25 +139,32 @@ thread_create(void (*fn) (void *), void *parg)
 {
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
-    void * new_stack = malloc(THREAD_MIN_STACK);
-
-    if  (!new_stack || !new_thread){
-        return THREAD_NOMEMORY;
-    }
+    void * new_stack = malloc(3 * THREAD_MIN_STACK + 16);
 
     ucontext_t * new_context = malloc(sizeof(ucontext_t));
+
+    if  (!new_stack || !new_thread || !new_context){
+        free(new_stack);
+        free(new_thread);
+        free(new_context);
+        return THREAD_NOMEMORY;
+    }
 
     err = getcontext(new_context);
     assert(!err);
 
+    new_stack = (void*)(((long long) new_stack + 16) & (unsigned long)(~0xF));
+    new_stack = (void*)((long long)new_stack - 8);
+
     new_context->uc_stack.ss_sp = new_stack;
-    new_context->uc_stack.ss_size = THREAD_MIN_STACK;
+    new_context->uc_stack.ss_size = 2 * THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
     new_context->uc_link = 0;
 
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
 
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + new_context->uc_stack.ss_size;
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
@@ -177,6 +186,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_thread->context = new_context;
     new_thread->state = 1;
     new_thread->id = new_id;
+    new_thread->p_stack = new_stack;
 
     threads_pointer_list[new_thread->id] = new_thread;
     threads_exist[new_thread->id] = true;
@@ -189,8 +199,20 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
+    if (!running){
+        return THREAD_FAILED;
+    }
+
     if (want_tid == THREAD_SELF || want_tid == running->id){
-        return running->id;
+        int setcontext_called_inside = 0;
+        int err = getcontext(running->context);
+        assert(!err);
+        if (setcontext_called_inside == 1){\
+            return (running->id);
+        }
+        setcontext_called_inside = 1;
+        err = setcontext(running->context);
+        assert(!err);
     }
 
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
@@ -231,7 +253,7 @@ thread_yield(Tid want_tid)
     }
 
     next_thread_to_run->state = 0;
-    next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
+    // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
     setcontext_called = 1;
     setcontext(running->context);
@@ -242,14 +264,23 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
+    bool dead_exit = false;
+    if (running->id == 0)
+        dead_exit = true;
+
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
     free(running->context->uc_stack.ss_sp);
     free(running->context);
+    free(running->p_stack);
     thread_pop_from_ready_queue(running->id);
     free(running);
     running = NULL;
+
+    if (dead_exit){
+        assert(0);
+    }
 
     if (ready_head){
         struct thread * next_thread_to_run = NULL;
@@ -277,6 +308,7 @@ thread_kill(Tid tid)
     threads_exist[thread_to_be_killed->id] = 0;
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
+    free(thread_to_be_killed->p_stack);
     thread_pop_from_ready_queue(thread_to_be_killed->id);
     free(thread_to_be_killed);
     threads_pointer_list[tid] = NULL;
