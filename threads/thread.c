@@ -123,17 +123,15 @@ thread_pop_from_ready_queue(Tid id){
         if (current_node->next->id == id){
             previous_node = current_node;
             current_node = current_node->next;
-            break;
+            struct ready_queue * temp_next = current_node->next;
+            free(current_node);
+            previous_node->next = temp_next;
         }
     }
 
     if (!previous_node){
         return THREAD_INVALID;
     }
-
-    struct ready_queue * temp_next = current_node->next;
-    free(current_node);
-    previous_node->next = temp_next;
 
     return id;
 }
