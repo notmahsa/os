@@ -94,7 +94,7 @@ thread_append_to_ready_queue(Tid id){
             assert(wq);
             wq->id = id;
             wq->next = NULL;
-            push->next = wait_queue_create();
+            push->next = wq;
             push->next->id = id;
             return id;
         }
@@ -143,7 +143,7 @@ thread_pop_from_ready_queue(Tid id){
     previous = ready_head;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
-        if(pop->id == tid)
+        if(pop->id == id)
         {
             previous->next = pop->next;
             free(pop);
@@ -273,6 +273,7 @@ thread_yield(Tid want_tid)
         // running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
         thread_append_to_ready_queue(running->id);
 
+        struct ready_queue temp_head = ready_head->next;
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
@@ -289,6 +290,7 @@ thread_yield(Tid want_tid)
 //        }
         int err;
         int setcontext_called = 0;
+        struct thread * next_thread_to_run;
         err = getcontext(running->context);
         assert(!err);
 
@@ -363,7 +365,6 @@ thread_kill(Tid tid)
 
     bool already_in_ready_queue = false;
     struct ready_queue * pop;
-    previous = ready_head;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
         if(pop->id == tid)
