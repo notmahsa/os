@@ -317,7 +317,7 @@ thread_exit()
     free(running);
     running = NULL;
 
-    if (ready_head && ready_head->next){
+    if (ready_head){
         struct thread * next_thread_to_run;
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
