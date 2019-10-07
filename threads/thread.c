@@ -89,15 +89,16 @@ thread_append_to_ready_queue(Tid id){
     struct ready_queue * push = ready_head;
     for(push = ready_head; push != NULL; push = push->next)
     {
-        if(!push->next)
+        if(push->next == NULL)
         {
             struct ready_queue * wq;
-            wq = malloc(sizeof(struct wait_queue));
+            wq = malloc(sizeof(struct ready_queue));
             assert(wq);
             wq->id = id;
             wq->next = NULL;
             push->next = wq;
             push->next->id = id;
+            break;
         }
     }
 //    struct ready_queue * current_node = ready_head;
