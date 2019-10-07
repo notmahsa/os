@@ -242,7 +242,6 @@ thread_yield(Tid want_tid)
         next_thread_to_run = threads_pointer_list[ready_head->id];
         if (next_thread_to_run->id == 0){
             thread_kill(running->id);
-            return THREAD_FAILED;
         }
         free(ready_head);
         ready_head = temp_head;
@@ -250,7 +249,6 @@ thread_yield(Tid want_tid)
     else{
         if (want_tid == 0){
             thread_kill(running->id);
-            return THREAD_FAILED;
         }
         else if (thread_pop_from_ready_queue(want_tid) == THREAD_INVALID){
             return THREAD_INVALID;
