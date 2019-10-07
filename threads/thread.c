@@ -342,7 +342,7 @@ Tid
 thread_kill(Tid tid)
 {
     // Destroys thread.
-    if (!threads_exist[tid])
+    if (threads_exist[tid] == false || running->id == tid)
 	    return THREAD_INVALID;
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
