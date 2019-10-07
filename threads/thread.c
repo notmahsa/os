@@ -225,7 +225,7 @@ thread_yield(Tid want_tid)
     }
 
     running->state = 1;
-    running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
+    // running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
     thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
