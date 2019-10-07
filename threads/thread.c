@@ -31,10 +31,10 @@ void thread_stub(void (*thread_main) (void *), void *arg)
     Tid ret;
     interrupts_on();
     thread_main(arg);  // call thread_main function with arg
-    ret = thread_exit();
+    thread_exit();
 
     // we should only get here if we are the last thread
-    assert(ret == THREAD_NONE);
+    // assert(ret == THREAD_NONE);
 
     for(int i = 0; i < THREAD_MAX_THREADS; i++)
     {
