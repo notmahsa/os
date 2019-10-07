@@ -241,11 +241,13 @@ thread_yield(Tid want_tid)
         ready_head = temp_head;
         if (next_thread_to_run->id == 0){
             thread_kill(running->id);
+            return THREAD_FAILED;
         }
     }
     else{
         if (want_tid == 0){
             thread_kill(running->id);
+            return THREAD_FAILED;
         }
         else if (thread_pop_from_ready_queue(want_tid) == THREAD_INVALID){
             return THREAD_INVALID;
