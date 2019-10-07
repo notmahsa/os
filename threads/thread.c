@@ -273,7 +273,7 @@ thread_yield(Tid want_tid)
         // running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
         thread_append_to_ready_queue(running->id);
 
-        struct ready_queue temp_head = ready_head->next;
+        struct ready_queue * temp_head = ready_head->next;
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
