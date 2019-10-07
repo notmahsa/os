@@ -104,6 +104,9 @@ thread_append_to_ready_queue(Tid id){
 
 Tid
 thread_pop_from_ready_queue(Tid id){
+    if (!ready_head){
+        return THREAD_INVALID;
+    }
     if (ready_head->id == id){
         struct ready_queue * temp_head = ready_head;
         ready_head = ready_head->next;
