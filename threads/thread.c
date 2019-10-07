@@ -138,7 +138,7 @@ thread_create(void (*fn) (void *), void *parg)
 {
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
-    void * new_stack = malloc(2 * THREAD_MIN_STACK);
+    void * new_stack = malloc((THREAD_MIN_STACK + 16) / 16 * 16);
 
     ucontext_t * new_context = malloc(sizeof(ucontext_t));
 
@@ -164,6 +164,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
+    new_context->uc_mcontext.gregs[REG_RBP] = (long long)new_stack;
 
     printf("Context is %p\n", new_context);
 
@@ -249,7 +250,7 @@ thread_yield(Tid want_tid)
     }
 
     next_thread_to_run->state = 0;
-    // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
+    next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
     setcontext_called = 1;
     setcontext(running->context);
