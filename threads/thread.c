@@ -301,7 +301,6 @@ thread_kill(Tid tid)
     threads_exist[thread_to_be_killed->id] = 0;
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
-    free(thread_to_be_killed->p_stack);
     thread_pop_from_ready_queue(thread_to_be_killed->id);
     free(thread_to_be_killed);
     threads_pointer_list[tid] = NULL;
