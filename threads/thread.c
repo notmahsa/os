@@ -206,7 +206,7 @@ thread_yield(Tid want_tid)
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
         if (running->state == 4){
-            threads_exist();
+            thread_exit();
         }
         return (running->id);
     }
@@ -256,11 +256,6 @@ thread_yield(Tid want_tid)
             return THREAD_INVALID;
         }
         next_thread_to_run = threads_pointer_list[want_tid];
-    }
-
-    if (next_thread_to_run->state == 4){
-        running = next_thread_to_run;
-        threads_exist();
     }
 
     next_thread_to_run->state = 0;
