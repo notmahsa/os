@@ -225,7 +225,7 @@ thread_yield(Tid want_tid)
     assert(!err);
 
     if (setcontext_called == 1){
-        return want_id;
+        return want_tid;
     }
 
     running->state = 1;
