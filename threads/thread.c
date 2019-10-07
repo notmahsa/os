@@ -57,6 +57,7 @@ thread_init(void)
     running = first_thread;
     err = getcontext(first_thread->context);
     assert(!err);
+    ready_head = NULL;
 }
 
 Tid
@@ -82,8 +83,9 @@ thread_append_to_ready_queue(Tid id){
         new_ready_node->id = id;
         new_ready_node->next = NULL;
         ready_head = new_ready_node;
+        return;
     }
-    struct ready_queue * push;
+    struct ready_queue * push = ready_head;
     for(push = ready_head; push != NULL; push = push->next)
     {
         if(!push->next)
@@ -239,7 +241,7 @@ thread_yield(Tid want_tid)
     if (running->state == 3){
         thread_exit();
     }
-    
+
     if (!running){
         return THREAD_FAILED;
     }
