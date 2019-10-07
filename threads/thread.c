@@ -259,7 +259,7 @@ thread_yield(Tid want_tid)
     return THREAD_FAILED;
 }
 
-Tid
+void
 thread_exit()
 {
     int enabled = interrupts_off();
@@ -269,7 +269,7 @@ thread_exit()
     if(q_start == NULL)
     {
         interrupts_set(enabled);
-        return THREAD_NONE;
+        return;
     }
 
     //Declare the current thread dead and free the stack memory
@@ -286,7 +286,7 @@ thread_exit()
     setcontext(&threads[next_id].context);
 
     interrupts_set(enabled);
-    return THREAD_NONE;
+    return=;
 }
 
 Tid
