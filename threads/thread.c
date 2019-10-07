@@ -89,6 +89,14 @@ thread_append_to_ready_queue(Tid id){
     }
 
     struct ready_queue * current_node = ready_head;
+    while (current_node->next){
+        if (current_node->id == id){
+            return id;
+        }
+        current_node = current_node->next;
+    }
+
+    struct ready_queue * current_node = ready_head;
     while (current_node->next && current_node->next->next){
         current_node = current_node->next;
     }
