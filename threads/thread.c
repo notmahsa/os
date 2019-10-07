@@ -179,8 +179,8 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     new_context->uc_link = 0;
 
-    if (sigemptyset(&new_context->uc_sigmask) < 0)
-        return THREAD_FAILED;
+//    if (sigemptyset(&new_context->uc_sigmask) < 0)
+//        return THREAD_FAILED;
 
     // (new_stack + new_context->uc_stack.ss_size - 8);
     new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - ((unsigned long)new_stack % (unsigned long)16) - 8);
@@ -194,6 +194,7 @@ thread_create(void (*fn) (void *), void *parg)
     short unsigned int new_id = -1;
     for (int i = 1; i < THREAD_MAX_THREADS; i++){
         if (threads_exist[i] == false){
+            printf("id %d in max %d", i, THREAD_MAX_THREADS);
             new_id = i;
             break;
         }
