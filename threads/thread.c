@@ -307,9 +307,9 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
-    bool dead_exit = false;
+    // bool dead_exit = false;
     if (running->id == 0){
-        dead_exit = true;
+        // dead_exit = true;
         thread_yield(THREAD_ANY);
     }
     else{
