@@ -76,35 +76,6 @@ thread_stub(void (*fn) (void *), void *parg){
     exit(0);
 }
 
-Tid
-thread_implicit_exit(Tid tid)
-{
-    // Only kills the thread, does not destroy it. Thread will enter zombie state.
-    if (!threads_exist[tid])
-	    return THREAD_NONE;
-
-	struct thread * thread_to_be_killed = threads_pointer_list[tid];
-    thread_to_be_killed->state = 3;
-
-    bool already_in_ready_queue = false;
-    struct ready_queue * pop;
-    for(pop = ready_head; pop != NULL; pop = pop->next)
-    {
-        if(pop->id == tid)
-        {
-            already_in_ready_queue = true;
-            break;
-        }
-    }
-
-    if (already_in_ready_queue){
-        return tid;
-    }
-
-    thread_append_to_ready_queue(thread_to_be_killed->id);
-    return tid;
-}
-
 void
 thread_append_to_ready_queue(Tid id){
     // printf("Appending %d\n", id);
@@ -154,6 +125,35 @@ thread_pop_from_ready_queue(Tid id){
         }
         previous = pop;
     }
+}
+
+Tid
+thread_implicit_exit(Tid tid)
+{
+    // Only kills the thread, does not destroy it. Thread will enter zombie state.
+    if (!threads_exist[tid])
+	    return THREAD_NONE;
+
+	struct thread * thread_to_be_killed = threads_pointer_list[tid];
+    thread_to_be_killed->state = 3;
+
+    bool already_in_ready_queue = false;
+    struct ready_queue * pop;
+    for(pop = ready_head; pop != NULL; pop = pop->next)
+    {
+        if(pop->id == tid)
+        {
+            already_in_ready_queue = true;
+            break;
+        }
+    }
+
+    if (already_in_ready_queue){
+        return tid;
+    }
+
+    thread_append_to_ready_queue(thread_to_be_killed->id);
+    return tid;
 }
 
 Tid
