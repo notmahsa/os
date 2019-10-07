@@ -107,6 +107,7 @@ thread_pop_from_ready_queue(Tid id){
     if (!ready_head){
         return THREAD_INVALID;
     }
+    
     if (ready_head->id == id){
         struct ready_queue * temp_head = ready_head;
         ready_head = ready_head->next;
@@ -238,6 +239,9 @@ thread_yield(Tid want_tid)
         next_thread_to_run = threads_pointer_list[ready_head->id];
         free(ready_head);
         ready_head = temp_head;
+        if (next_thread_to_run->id == 0){
+            thread_kill(running->id);
+        }
     }
     else{
         if (thread_pop_from_ready_queue(want_tid) == THREAD_INVALID){
@@ -246,9 +250,6 @@ thread_yield(Tid want_tid)
         next_thread_to_run = threads_pointer_list[want_tid];
     }
 
-    if (next_thread_to_run->id == 0){
-        thread_kill(running->id);
-    }
     next_thread_to_run->state = 0;
     // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
