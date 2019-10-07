@@ -274,6 +274,7 @@ thread_yield(Tid want_tid)
         thread_append_to_ready_queue(running->id);
 
         struct ready_queue * temp_head = ready_head->next;
+        next_thread_to_run = ready_head;
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
