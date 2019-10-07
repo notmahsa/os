@@ -302,8 +302,9 @@ Tid
 thread_kill(Tid tid)
 {
     bool kill_running = false;
-    if (running->id == tid)
+    if (running->id == tid){
         kill_running = true;
+    }
 	if (!threads_exist[tid])
 	    return THREAD_FAILED;
 	thread_pop_from_ready_queue(tid);
@@ -317,7 +318,7 @@ thread_kill(Tid tid)
     free(thread_to_be_killed);
     threads_pointer_list[tid] = NULL;
 
-    if (ready_head){
+    if (kill_running && ready_head){
         struct thread * next_thread_to_run = NULL;
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
