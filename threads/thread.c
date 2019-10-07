@@ -28,7 +28,7 @@ int active = 0;
 
 void thread_stub(void (*thread_main) (void *), void *arg)
 {
-    Tid ret;
+    //Tid ret;
     interrupts_on();
     thread_main(arg);  // call thread_main function with arg
     thread_exit();
@@ -286,7 +286,7 @@ thread_exit()
     setcontext(&threads[next_id].context);
 
     interrupts_set(enabled);
-    return=;
+    return;
 }
 
 Tid
