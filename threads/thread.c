@@ -226,10 +226,11 @@ thread_yield(Tid want_tid)
 
     running->state = 1;
     // running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
-    if (running->id)
-        thread_append_to_ready_queue(running->id);
+
+    thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
+
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
         free(ready_head);
@@ -242,6 +243,9 @@ thread_yield(Tid want_tid)
         next_thread_to_run = threads_pointer_list[want_tid];
     }
 
+    if (next_thread_to_run->id == 0){
+        thread_kill(running->id);
+    }
     next_thread_to_run->state = 0;
     // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
