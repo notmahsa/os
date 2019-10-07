@@ -215,7 +215,7 @@ thread_create(void (*fn) (void *), void *parg)
     threads_exist[new_thread->id] = true;
     thread_append_to_ready_queue(new_thread->id);
 
-    printf("LOLOLOL id %d\n", new_thread->id);
+    printf("LOLOLOL id %d %d\n", new_thread->id, new_id);
 	return new_thread->id;
 }
 
