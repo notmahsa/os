@@ -194,13 +194,13 @@ thread_create(void (*fn) (void *), void *parg)
     short unsigned int new_id = -1;
     for (int i = 1; i < THREAD_MAX_THREADS; i++){
         if (threads_exist[i] == false){
-            printf("id %d in max %d\n", i, THREAD_MAX_THREADS);
             new_id = i;
             break;
         }
     }
 
     if (new_id == -1){
+        printf("id %d in max %d\n", i, THREAD_MAX_THREADS);
         return THREAD_NOMORE;
     }
 
