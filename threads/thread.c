@@ -74,7 +74,7 @@ void
 thread_stub(void (*fn) (void *), void *parg){
     (*fn)(parg);
     thread_exit();
-    assert(0);
+    exit(0);
 }
 
 Tid
@@ -255,7 +255,6 @@ thread_exit()
 {
     bool dead_exit = false;
     if (running->id == 0){
-        return;
         dead_exit = true;
     }
 
@@ -270,7 +269,7 @@ thread_exit()
     running = NULL;
 
     if (dead_exit){
-        assert(0);
+        exit(0);
     }
 
     if (ready_head){
@@ -283,8 +282,6 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
-
-    assert(0);
 }
 
 Tid
