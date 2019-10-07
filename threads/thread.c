@@ -201,15 +201,7 @@ thread_yield(Tid want_tid)
     }
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
-        int setcontext_called_inside = 0;
-        int err = getcontext(running->context);
-        assert(!err);
-        if (setcontext_called_inside == 1){\
-            return (running->id);
-        }
-        setcontext_called_inside = 1;
-        err = setcontext(running->context);
-        assert(!err);
+        return (running->id);
     }
 
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
