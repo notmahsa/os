@@ -127,7 +127,7 @@ thread_pop_from_ready_queue(Tid id){
     struct ready_queue * previous_node = NULL;
 
     while (current_node && current_node->next){
-        printf("Pop: checking %d\n", current_node->next->id);
+        printf("Pop: checking %d %p %p\n", current_node->next->id, current_node, current_node->next);
         if (current_node->next->id == id){
             previous_node = current_node;
             current_node = current_node->next;
