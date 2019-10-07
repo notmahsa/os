@@ -307,11 +307,6 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
-    bool dead_exit = false;
-    if (running->id == 0){
-        dead_exit = true;
-    }
-
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -322,11 +317,7 @@ thread_exit()
     free(running);
     running = NULL;
 
-    if (dead_exit){
-        exit(0);
-    }
-
-    if (ready_head){
+    if (ready_head && ready_head->next){
         struct thread * next_thread_to_run;
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
@@ -336,6 +327,10 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
+
+    free(threads_pointer_list[ready_head->id]->context);
+    free(threads_pointer_list[ready_head->id]);
+    exit(0);
 }
 
 Tid
