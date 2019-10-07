@@ -367,7 +367,7 @@ thread_kill(Tid tid)
 {
     // Only kills the thread, does not destroy it. Thread will enter zombie state.
     if (!threads_exist[tid])
-	    return THREAD_FAILED;
+	    return tid;
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
     thread_to_be_killed->state = 3;
