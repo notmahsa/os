@@ -76,6 +76,35 @@ thread_stub(void (*fn) (void *), void *parg){
     exit(0);
 }
 
+Tid
+thread_implicit_exit(Tid tid)
+{
+    // Only kills the thread, does not destroy it. Thread will enter zombie state.
+    if (!threads_exist[tid])
+	    return THREAD_NONE;
+
+	struct thread * thread_to_be_killed = threads_pointer_list[tid];
+    thread_to_be_killed->state = 3;
+
+    bool already_in_ready_queue = false;
+    struct ready_queue * pop;
+    for(pop = ready_head; pop != NULL; pop = pop->next)
+    {
+        if(pop->id == tid)
+        {
+            already_in_ready_queue = true;
+            break;
+        }
+    }
+
+    if (already_in_ready_queue){
+        return tid;
+    }
+
+    thread_append_to_ready_queue(thread_to_be_killed->id);
+    return tid;
+}
+
 void
 thread_append_to_ready_queue(Tid id){
     // printf("Appending %d\n", id);
@@ -101,32 +130,6 @@ thread_append_to_ready_queue(Tid id){
             break;
         }
     }
-//    struct ready_queue * current_node = ready_head;
-//    if (current_node->id == id){
-//        return id;
-//    }
-//    while (current_node->next){
-//        if (current_node->id == id){
-//            return id;
-//        }
-//        current_node = current_node->next;
-//    }
-//    if (current_node->id == id){
-//        return id;
-//    }
-//
-//    current_node = ready_head;
-//    while (current_node->next && current_node->next->next){
-//        current_node = current_node->next;
-//    }
-//    assert(!current_node->next);
-//
-//    struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
-//    new_ready_node->id = id;
-//    new_ready_node->next = NULL;
-//    current_node->next = new_ready_node;
-//
-//    return id;
 }
 
 void
@@ -151,32 +154,6 @@ thread_pop_from_ready_queue(Tid id){
         }
         previous = pop;
     }
-
-//
-//
-//    bool head_match = false;
-//    if (ready_head->id == id){
-//        head_match = true;
-//    }
-//
-//    struct ready_queue * current_node = ready_head;
-//    while (current_node && current_node->next){
-//        printf("Pop: checking %d %p %p\n", current_node->next->id, current_node, current_node->next);
-//        if (current_node->next->id == id){
-//            struct ready_queue * temp_next = current_node->next->next;
-//            free(current_node->next);
-//            current_node->next = temp_next;
-//            current_node = current_node->next;
-//        }
-//    }
-//
-//    if (head_match){
-//        struct ready_queue * temp_head = ready_head;
-//        ready_head = ready_head->next;
-//        free(temp_head);
-//    }
-//
-//    return id;
 }
 
 Tid
@@ -380,35 +357,6 @@ thread_kill(Tid tid)
     free(thread_to_be_killed);
     if (ready_head == NULL)
         return THREAD_NONE;
-    return tid;
-}
-
-Tid
-thread_implicit_exit(Tid tid)
-{
-    // Only kills the thread, does not destroy it. Thread will enter zombie state.
-    if (!threads_exist[tid])
-	    return THREAD_NONE;
-
-	struct thread * thread_to_be_killed = threads_pointer_list[tid];
-    thread_to_be_killed->state = 3;
-
-    bool already_in_ready_queue = false;
-    struct ready_queue * pop;
-    for(pop = ready_head; pop != NULL; pop = pop->next)
-    {
-        if(pop->id == tid)
-        {
-            already_in_ready_queue = true;
-            break;
-        }
-    }
-
-    if (already_in_ready_queue){
-        return tid;
-    }
-
-    thread_append_to_ready_queue(thread_to_be_killed->id);
     return tid;
 }
 
