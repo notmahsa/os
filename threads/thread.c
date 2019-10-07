@@ -211,19 +211,21 @@ thread_yield(Tid want_tid)
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
         return THREAD_INVALID;
     }
-    if (!ready_head){
-        return THREAD_NONE;
-    }
 
     int err;
     volatile int setcontext_called = 0;
     struct thread * next_thread_to_run;
 
+    if (!ready_head){
+        return THREAD_NONE;
+    }
+
+
     err = getcontext(running->context);
     assert(!err);
 
     if (setcontext_called == 1){
-        return want_tid;
+        return running->id;
     }
 
     running->state = 1;
@@ -232,19 +234,20 @@ thread_yield(Tid want_tid)
     thread_append_to_ready_queue(running->id);
 
     if (want_tid == THREAD_ANY){
+
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
         if (next_thread_to_run->id == 0){
-            setcontext_called = 1;
             thread_kill(running->id);
+            return THREAD_FAILED;
         }
         free(ready_head);
         ready_head = temp_head;
     }
     else{
         if (want_tid == 0){
-            setcontext_called = 1;
             thread_kill(running->id);
+            return THREAD_FAILED;
         }
         else if (thread_pop_from_ready_queue(want_tid) == THREAD_INVALID){
             return THREAD_INVALID;
@@ -253,6 +256,7 @@ thread_yield(Tid want_tid)
     }
 
     next_thread_to_run->state = 0;
+    // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
     running = next_thread_to_run;
     setcontext_called = 1;
     setcontext(running->context);
