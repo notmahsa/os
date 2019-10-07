@@ -281,7 +281,7 @@ thread_yield(Tid want_tid)
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
         if (next_thread_to_run->id == 0){
-            thread_kill(running->id);
+            thread_implicit_exit(running->id);
         }
         free(ready_head);
         ready_head = temp_head;
@@ -364,6 +364,27 @@ thread_exit()
 
 Tid
 thread_kill(Tid tid)
+{
+    // Destroys thread.
+    if (!threads_exist[tid])
+	    return THREAD_INVALID;
+
+	struct thread * thread_to_be_killed = threads_pointer_list[tid];
+	thread_pop_from_ready_queue(thread_to_be_killed->id);
+
+    thread_to_be_killed->state = 4;
+    threads_exist[thread_to_be_killed->id] = 0;
+    threads_pointer_list[thread_to_be_killed->id] = NULL;
+    free(thread_to_be_killed->context->uc_stack.ss_sp);
+    free(thread_to_be_killed->context);
+    free(thread_to_be_killed);
+    if (ready_head == NULL)
+        return THREAD_NONE;
+    return tid;
+}
+
+Tid
+thread_implicit_exit(Tid tid)
 {
     // Only kills the thread, does not destroy it. Thread will enter zombie state.
     if (!threads_exist[tid])
