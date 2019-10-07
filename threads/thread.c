@@ -254,9 +254,10 @@ void
 thread_exit()
 {
     bool dead_exit = false;
-    if (running->id == 0)
+    if (running->id == 0){
         return;
         dead_exit = true;
+    }
 
     running->state = 4;
     threads_exist[running->id] = 0;
