@@ -75,14 +75,13 @@ thread_stub(void (*fn) (void *), void *parg){
     exit(0);
 }
 
-Tid
+void
 thread_append_to_ready_queue(Tid id){
     if (!ready_head){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
         new_ready_node->next = NULL;
         ready_head = new_ready_node;
-        return id;
     }
     struct ready_queue * push;
     for(push = ready_head; push != NULL; push = push->next)
@@ -96,10 +95,8 @@ thread_append_to_ready_queue(Tid id){
             wq->next = NULL;
             push->next = wq;
             push->next->id = id;
-            return id;
         }
     }
-
 //    struct ready_queue * current_node = ready_head;
 //    if (current_node->id == id){
 //        return id;
