@@ -355,8 +355,7 @@ thread_kill(Tid tid)
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
     free(thread_to_be_killed);
-    if (ready_head == NULL)
-        return THREAD_NONE;
+
     return tid;
 }
 
