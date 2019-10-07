@@ -72,7 +72,6 @@ thread_id()
 
 void
 thread_stub(void (*fn) (void *), void *parg){
-    Tid ret;
     (*fn)(parg);
     thread_exit();
     assert(0);
@@ -164,7 +163,7 @@ thread_create(void (*fn) (void *), void *parg)
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + new_context->uc_stack.ss_size;
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + new_context->uc_stack.ss_size);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
