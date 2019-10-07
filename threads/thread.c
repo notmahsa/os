@@ -100,7 +100,7 @@ thread_append_to_ready_queue(Tid id){
     while (current_node->next && current_node->next->next){
         current_node = current_node->next;
     }
-    assert(current_node);
+    assert(!current_node->next);
 
     struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
     new_ready_node->id = id;
@@ -116,29 +116,25 @@ thread_pop_from_ready_queue(Tid id){
         return THREAD_INVALID;
     }
 
+    bool head_match = false;
     if (ready_head->id == id){
-        struct ready_queue * temp_head = ready_head;
-        ready_head = ready_head->next;
-        free(temp_head);
-        return id;
+        head_match = true;
     }
-
-    struct ready_queue * current_node = ready_head;
-    struct ready_queue * previous_node = NULL;
 
     while (current_node && current_node->next){
         printf("Pop: checking %d %p %p\n", current_node->next->id, current_node, current_node->next);
         if (current_node->next->id == id){
-            previous_node = current_node;
+            struct ready_queue * temp_next = current_node->next->next;
+            free(current_node->next);
+            current_node->next = temp_next;
             current_node = current_node->next;
-            struct ready_queue * temp_next = current_node->next;
-            free(current_node);
-            previous_node->next = temp_next;
         }
     }
 
-    if (!previous_node){
-        return THREAD_INVALID;
+    if (head_match){
+        struct ready_queue * temp_head = ready_head;
+        ready_head = ready_head->next;
+        free(temp_head);
     }
 
     return id;
