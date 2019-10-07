@@ -138,7 +138,7 @@ thread_create(void (*fn) (void *), void *parg)
 {
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
-    void * new_stack = malloc(3 * THREAD_MIN_STACK + 16);
+    void * new_stack = malloc(2 * THREAD_MIN_STACK);
 
     ucontext_t * new_context = malloc(sizeof(ucontext_t));
 
@@ -152,9 +152,6 @@ thread_create(void (*fn) (void *), void *parg)
     err = getcontext(new_context);
     assert(!err);
 
-    new_stack = (void*)(((long long) new_stack + 16) & (unsigned long)(~0xF));
-    new_stack = (void*)((long long)new_stack - 8);
-
     new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = 2 * THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
@@ -163,7 +160,7 @@ thread_create(void (*fn) (void *), void *parg)
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + new_context->uc_stack.ss_size);
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + new_context->uc_stack.ss_size - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
