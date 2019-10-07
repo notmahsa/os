@@ -38,7 +38,7 @@ struct thread {
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
-volatile struct thread * running = NULL;
+struct thread * running = NULL;
 struct ready_queue * ready_head = NULL;
 
 
