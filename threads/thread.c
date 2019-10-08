@@ -6,12 +6,11 @@
 #include "interrupt.h"
 
 /*
- 0  R  running or runnable (on run queue)
- 1  D  uninterruptible sleep (usually IO)
- 2  S  interruptible sleep (waiting for an event to complete)
- 3  Z  defunct/zombie, terminated but not reaped by its parent
- 4  T  stopped, either by a job control signal or because
-               it is being traced
+ 0  R  running (or runnable, on run queue)
+ 1  S  ready (interruptible sleep, waiting for an event to complete)
+ 2  D  blocked (uninterruptible sleep, usually IO)
+ 3  Z  exited (defunct/zombie, terminated but not reaped by its parent)
+ 4  T  stopped (either by a job control signal or because it is being traced)
 */
 
 struct ready_queue {
@@ -39,7 +38,6 @@ bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
 struct thread * running = NULL;
 struct ready_queue * ready_head = NULL;
-
 
 void
 thread_init(void)
@@ -129,7 +127,10 @@ thread_pop_from_ready_queue(Tid id){
 Tid
 thread_implicit_exit(Tid tid)
 {
-    // Only kills the thread, does not destroy it. Thread will enter zombie state.
+    /*
+       Only kills the thread. This does not destroy the thread.
+       Thread will enter zombie state.
+    */
     if (!threads_exist[tid])
 	    return THREAD_NONE;
 
@@ -193,10 +194,11 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     new_context->uc_link = 0;
 
+    unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
     if (sigemptyset(&new_context->uc_sigmask) < 0)
         return THREAD_FAILED;
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - ((unsigned long)new_stack % (unsigned long)16) - 8);
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
@@ -251,7 +253,6 @@ thread_yield(Tid want_tid)
 
         setcontext_called = 1;
         running->state = 1;
-        // running->context->uc_mcontext.gregs[REG_RIP] = new_context.uc_mcontext.gregs[REG_RIP];
         thread_append_to_ready_queue(running->id);
 
         struct ready_queue * temp_head = ready_head->next;
@@ -264,15 +265,8 @@ thread_yield(Tid want_tid)
         next_thread_to_run->state = 0;
         running = next_thread_to_run;
         setcontext(running->context);
-
     }
     else{
-//        if (want_tid == 0){
-//            thread_kill(running->id);
-//        }
-//        else if (thread_pop_from_ready_queue(want_tid) == THREAD_INVALID){
-//            return THREAD_INVALID;
-//        }
         int err;
         int setcontext_called = 0;
         struct thread * next_thread_to_run;
@@ -285,9 +279,6 @@ thread_yield(Tid want_tid)
 
         setcontext_called = 1;
         thread_append_to_ready_queue(running->id);
-
-        // Find the thread id in the ready q, POP it and then run it
-        // if thread is in the head and we have to modify head
         thread_pop_from_ready_queue(want_tid);
         next_thread_to_run = threads_pointer_list[want_tid];
         next_thread_to_run->state = 0;
@@ -295,26 +286,17 @@ thread_yield(Tid want_tid)
         setcontext(running->context);
     }
 
-//    next_thread_to_run->state = 0;
-//    // next_thread_to_run->context->uc_mcontext.gregs[REG_RBP] = (long long)&running->context->uc_mcontext.gregs[REG_RBP];
-//    running = next_thread_to_run;
-//    setcontext_called = 1;
-//    setcontext(running->context);
-
 	return THREAD_FAILED;
 }
 
 void
 thread_exit()
 {
-
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
     free(running->context->uc_stack.ss_sp);
     free(running->context);
-    // free(running->p_stack);
-    // thread_pop_from_ready_queue(running->id);
     free(running);
     running = NULL;
 
@@ -328,14 +310,16 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
-    
+
     exit(0);
 }
 
 Tid
 thread_kill(Tid tid)
 {
-    // Destroys thread.
+    /*
+       Destroys the thread and frees all associated memory.
+    */
     if (threads_exist[tid] == false || running->id == tid)
 	    return THREAD_INVALID;
 
