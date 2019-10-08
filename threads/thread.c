@@ -232,7 +232,7 @@ thread_yield(Tid want_tid)
         return THREAD_INVALID;
     }
 
-    if (ready_head == NULL || ready_head->next){
+    if (ready_head == NULL || ready_head->next == NULL){
         return THREAD_NONE;
     }
 
