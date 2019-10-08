@@ -307,33 +307,28 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
-    // bool dead_exit = false;
-    if (running->id == 0){
-        // dead_exit = true;
-        thread_yield(THREAD_ANY);
-    }
-    else{
-        running->state = 4;
-        threads_exist[running->id] = 0;
-        threads_pointer_list[running->id] = NULL;
-        free(running->context->uc_stack.ss_sp);
-        free(running->context);
-        // free(running->p_stack);
-        // thread_pop_from_ready_queue(running->id);
-        free(running);
-        running = NULL;
 
-        if (ready_head){
-            struct thread * next_thread_to_run;
-            struct ready_queue * temp_head = ready_head->next;
-            next_thread_to_run = threads_pointer_list[ready_head->id];
-            free(ready_head);
-            ready_head = temp_head;
-            next_thread_to_run->state = 0;
-            running = next_thread_to_run;
-            setcontext(running->context);
-        }
+    running->state = 4;
+    threads_exist[running->id] = 0;
+    threads_pointer_list[running->id] = NULL;
+    free(running->context->uc_stack.ss_sp);
+    free(running->context);
+    // free(running->p_stack);
+    // thread_pop_from_ready_queue(running->id);
+    free(running);
+    running = NULL;
+
+    if (ready_head){
+        struct thread * next_thread_to_run;
+        struct ready_queue * temp_head = ready_head->next;
+        next_thread_to_run = threads_pointer_list[ready_head->id];
+        free(ready_head);
+        ready_head = temp_head;
+        next_thread_to_run->state = 0;
+        running = next_thread_to_run;
+        setcontext(running->context);
     }
+    
     exit(0);
 }
 
