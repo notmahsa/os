@@ -42,6 +42,9 @@ struct ready_queue * ready_head = NULL;
 void
 thread_init(void)
 {
+    int enabled = interrupts_off();
+    assert(!interrupts_enabled());
+
 	int err;
 	struct thread * first_thread = (struct thread *)malloc(sizeof(struct thread));
 	ucontext_t * context = (ucontext_t *)malloc(sizeof(ucontext_t));
@@ -56,13 +59,15 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
-    register_interrupt_handler(SIGALRM);
+
+    interrupts_set(enabled);
 }
 
 Tid
 thread_id()
 {
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
 	if (running){
 	    interrupts_set(enabled);
 	    return running->id;
@@ -74,6 +79,7 @@ thread_id()
 void
 thread_stub(void (*fn) (void *), void *parg){
     interrupts_on();
+    assert(interrupts_enabled());
     (*fn)(parg);
     thread_exit();
     exit(0);
@@ -82,6 +88,7 @@ thread_stub(void (*fn) (void *), void *parg){
 void
 thread_append_to_ready_queue(Tid id){
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
@@ -111,6 +118,7 @@ thread_append_to_ready_queue(Tid id){
 void
 thread_pop_from_ready_queue(Tid id){
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     if (!ready_head){
         interrupts_set(enabled);
         return;
@@ -144,6 +152,7 @@ thread_implicit_exit(Tid tid)
        Thread will enter zombie state.
     */
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     if (!threads_exist[tid]){
         interrupts_set(enabled);
 	    return THREAD_NONE;
@@ -177,6 +186,7 @@ Tid
 thread_create(void (*fn) (void *), void *parg)
 {
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
     void * new_stack = malloc(THREAD_MIN_STACK);
@@ -242,6 +252,7 @@ Tid
 thread_yield(Tid want_tid)
 {
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     if (running->state == 3){
         thread_exit();
     }
@@ -324,6 +335,7 @@ void
 thread_exit()
 {
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -353,6 +365,7 @@ thread_kill(Tid tid)
        Destroys the thread and frees all associated memory.
     */
     int enabled = interrupts_off();
+    assert(!interrupts_enabled());
     if (threads_exist[tid] == false || running->id == tid){
         interrupts_set(enabled);
 	    return THREAD_INVALID;
