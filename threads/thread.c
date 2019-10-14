@@ -56,19 +56,24 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
+    register_interrupt_handler(SIGALRM);
 }
 
 Tid
 thread_id()
 {
+    int enabled = interrupts_off();
 	if (running){
+	    interrupts_set(enabled);
 	    return running->id;
 	}
+	interrupts_set(enabled);
 	return THREAD_INVALID;
 }
 
 void
 thread_stub(void (*fn) (void *), void *parg){
+    interrupts_on();
     (*fn)(parg);
     thread_exit();
     exit(0);
@@ -76,11 +81,13 @@ thread_stub(void (*fn) (void *), void *parg){
 
 void
 thread_append_to_ready_queue(Tid id){
+    int enabled = interrupts_off();
     if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
         new_ready_node->next = NULL;
         ready_head = new_ready_node;
+        interrupts_set(enabled);
         return;
     }
     struct ready_queue * push = ready_head;
@@ -98,17 +105,21 @@ thread_append_to_ready_queue(Tid id){
             break;
         }
     }
+    interrupts_set(enabled);
 }
 
 void
 thread_pop_from_ready_queue(Tid id){
+    int enabled = interrupts_off();
     if (!ready_head){
+        interrupts_set(enabled);
         return;
     }
     if(ready_head != NULL && ready_head->id == id){
         struct ready_queue * temp = ready_head->next;
         free(ready_head);
         ready_head = temp;
+        interrupts_set(enabled);
         return;
     }
     struct ready_queue * pop, * previous;
@@ -122,6 +133,7 @@ thread_pop_from_ready_queue(Tid id){
         }
         previous = pop;
     }
+    interrupts_set(enabled);
 }
 
 Tid
@@ -131,8 +143,11 @@ thread_implicit_exit(Tid tid)
        Only kills the thread. This does not destroy the thread.
        Thread will enter zombie state.
     */
-    if (!threads_exist[tid])
+    int enabled = interrupts_off();
+    if (!threads_exist[tid]){
+        interrupts_set(enabled);
 	    return THREAD_NONE;
+	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
     thread_to_be_killed->state = 3;
@@ -149,16 +164,19 @@ thread_implicit_exit(Tid tid)
     }
 
     if (already_in_ready_queue){
+        interrupts_set(enabled);
         return tid;
     }
 
     thread_append_to_ready_queue(thread_to_be_killed->id);
+    interrupts_set(enabled);
     return tid;
 }
 
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
+    int enabled = interrupts_off();
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
     void * new_stack = malloc(THREAD_MIN_STACK);
@@ -168,6 +186,7 @@ thread_create(void (*fn) (void *), void *parg)
         free(new_stack);
         free(new_thread);
         free(new_context);
+        interrupts_set(enabled);
         return THREAD_NOMEMORY;
     }
 
@@ -183,6 +202,7 @@ thread_create(void (*fn) (void *), void *parg)
         free(new_stack);
         free(new_thread);
         free(new_context);
+        interrupts_set(enabled);
         return THREAD_NOMORE;
     }
 
@@ -195,8 +215,10 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_link = 0;
 
     unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
-    if (sigemptyset(&new_context->uc_sigmask) < 0)
+    if (sigemptyset(&new_context->uc_sigmask) < 0){
+        interrupts_set(enabled);
         return THREAD_FAILED;
+    }
 
     new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
@@ -212,29 +234,35 @@ thread_create(void (*fn) (void *), void *parg)
     threads_exist[new_thread->id] = true;
     thread_append_to_ready_queue(new_thread->id);
 
+    interrupts_set(enabled);
 	return new_thread->id;
 }
 
 Tid
 thread_yield(Tid want_tid)
 {
+    int enabled = interrupts_off();
     if (running->state == 3){
         thread_exit();
     }
 
     if (!running){
+        interrupts_set(enabled);
         return THREAD_FAILED;
     }
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
+        interrupts_set(enabled);
         return (running->id);
     }
 
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
+        interrupts_set(enabled);
         return THREAD_INVALID;
     }
 
     if (ready_head == NULL){
+        interrupts_set(enabled);
         return THREAD_NONE;
     }
 
@@ -248,6 +276,7 @@ thread_yield(Tid want_tid)
         assert(!err);
 
         if (setcontext_called == 1){
+            interrupts_set(enabled);
             return yield_tid;
         }
 
@@ -274,6 +303,7 @@ thread_yield(Tid want_tid)
         assert(!err);
 
         if (setcontext_called == 1){
+            interrupts_set(enabled);
             return want_tid;
         }
 
@@ -286,12 +316,14 @@ thread_yield(Tid want_tid)
         setcontext(running->context);
     }
 
+    interrupts_set(enabled);
 	return THREAD_FAILED;
 }
 
 void
 thread_exit()
 {
+    int enabled = interrupts_off();
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -310,7 +342,7 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
-
+    interrupts_set(enabled);
     exit(0);
 }
 
@@ -320,8 +352,11 @@ thread_kill(Tid tid)
     /*
        Destroys the thread and frees all associated memory.
     */
-    if (threads_exist[tid] == false || running->id == tid)
+    int enabled = interrupts_off();
+    if (threads_exist[tid] == false || running->id == tid){
+        interrupts_set(enabled);
 	    return THREAD_INVALID;
+	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
 	thread_pop_from_ready_queue(thread_to_be_killed->id);
@@ -333,6 +368,7 @@ thread_kill(Tid tid)
     free(thread_to_be_killed->context);
     free(thread_to_be_killed);
 
+    interrupts_set(enabled);
     return tid;
 }
 
