@@ -286,10 +286,8 @@ thread_yield(Tid want_tid)
         int err;
         Tid yield_tid = ready_head->id;
         int setcontext_called = 0;
-        struct thread * next_thread_to_run;
 
         err = getcontext(running->context);
-        interrupts_off();
         assert(!err);
 
         if (setcontext_called == 1){
@@ -302,6 +300,7 @@ thread_yield(Tid want_tid)
         thread_append_to_ready_queue(running->id);
 
         struct ready_queue * temp_head = ready_head->next;
+        struct thread * next_thread_to_run;
         next_thread_to_run = threads_pointer_list[ready_head->id];
         if (ready_head->next == NULL){
             thread_implicit_exit(running->id);
