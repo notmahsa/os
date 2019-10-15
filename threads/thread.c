@@ -65,23 +65,13 @@ thread_init(void)
 Tid
 thread_id()
 {
-    int enabled = interrupts_off();
-
-	if (running){
-	    Tid ret = running->id;
-	    interrupts_set(enabled);
-	    return ret;
-	}
-
-	interrupts_set(enabled);
-	return THREAD_INVALID;
+    return running->id;
 }
 
 void
 thread_stub(void (*fn) (void *), void *parg){
-    int enabled = interrupts_on();
+    interrupts_on();
     (*fn)(parg);
-    interrupts_set(enabled);
     thread_exit();
 
     exit(0);
@@ -282,6 +272,7 @@ thread_yield(Tid want_tid)
         struct thread * next_thread_to_run;
 
         err = getcontext(running->context);
+        interrupts_off();
         assert(!err);
 
         if (setcontext_called == 1){
@@ -389,6 +380,7 @@ thread_kill(Tid tid)
 struct wait_queue *
 wait_queue_create()
 {
+    int enabled = interrupts_off();
 	struct wait_queue *wq;
 
 	wq = malloc(sizeof(struct wait_queue));
@@ -396,6 +388,7 @@ wait_queue_create()
 
 	TBD();
 
+    interrupts_set(enabled);
 	return wq;
 }
 
