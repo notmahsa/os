@@ -69,6 +69,7 @@ thread_id()
 {
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
 
 	if (running){
 	    Tid ret = running->id;
@@ -93,6 +94,7 @@ void
 thread_append_to_ready_queue(Tid id){
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
@@ -123,6 +125,7 @@ void
 thread_pop_from_ready_queue(Tid id){
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     if (!ready_head){
         interrupts_set(enabled);
         return;
@@ -157,6 +160,7 @@ thread_implicit_exit(Tid tid)
     */
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     if (!threads_exist[tid]){
         interrupts_set(enabled);
 	    return THREAD_NONE;
@@ -190,6 +194,7 @@ thread_create(void (*fn) (void *), void *parg)
 {
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
     void * new_stack = malloc(THREAD_MIN_STACK);
@@ -257,6 +262,7 @@ thread_yield(Tid want_tid)
 {
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     if (running->state == 3){
         interrupts_set(enabled);
         thread_exit();
@@ -346,6 +352,7 @@ thread_exit()
 {
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -376,6 +383,7 @@ thread_kill(Tid tid)
     */
     int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled()==0);
     if (threads_exist[tid] == false || running->id == tid){
         interrupts_set(enabled);
 	    return THREAD_INVALID;
