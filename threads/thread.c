@@ -157,6 +157,11 @@ thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
     enabled = interrupts_off();
     assert(!interrupts_enabled());
     if (wait_head == NULL){
+        struct wait_queue * new_wait_node = malloc(sizeof(struct wait_queue));
+        new_wait_node->id = id;
+        new_wait_node->next = NULL;
+        wait_head = new_wait_node;
+        interrupts_set(enabled);
         return;
     }
     struct wait_queue * push = wait_head;
@@ -554,8 +559,37 @@ thread_sleep(struct wait_queue *queue)
 int
 thread_wakeup(struct wait_queue *queue, int all)
 {
-	TBD();
-	return 0;
+	int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+
+    if (queue == NULL){
+        interrupts_set(enabled);
+        return 0;
+    }
+
+    if (all == 0){
+        struct wait_queue * new_head = queue->next;
+        Tid id = queue->id;
+        free(queue);
+        queue = new_head;
+
+        thread_append_to_ready_queue(id);
+        interrupts_set(enabled);
+        return 1;
+    }
+
+    int counter = 0;
+    struct wait_queue * queue_iter = queue;
+    while(queue_iter->next != NULL) {
+        thread_append_to_ready_queue(queue_iter->id);
+        counter++;
+        struct wait_queue * temp_head = queue_iter;
+        queue_iter = queue_iter->next;
+        free(temp_head);
+    }
+    interrupts_set(enabled);
+    return counter;
 }
 
 /* suspend current thread until Thread tid exits */
