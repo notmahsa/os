@@ -70,12 +70,12 @@ thread_id()
     assert(!interrupts_enabled());
 
 	if (running){
+	    Tid ret = running->id
 	    interrupts_set(enabled);
-	    return running->id;
+	    return ret;
 	}
 
 	interrupts_set(enabled);
-
 	return THREAD_INVALID;
 }
 
@@ -86,7 +86,7 @@ thread_stub(void (*fn) (void *), void *parg){
 
     (*fn)(parg);
     thread_exit();
-    
+
     exit(0);
 }
 
@@ -249,8 +249,9 @@ thread_create(void (*fn) (void *), void *parg)
     threads_exist[new_thread->id] = true;
     thread_append_to_ready_queue(new_thread->id);
 
+    Tid ret = new_thread->id;
     interrupts_set(enabled);
-	return new_thread->id;
+	return ret;
 }
 
 Tid
@@ -268,8 +269,9 @@ thread_yield(Tid want_tid)
     }
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
+        Tid ret = running->id;
         interrupts_set(enabled);
-        return (running->id);
+        return ret;
     }
 
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
