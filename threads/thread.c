@@ -67,7 +67,6 @@ Tid
 thread_id()
 {
 	if (running){
-	    interrupts_set(enabled);
 	    return running->id;
 	}
 	return THREAD_INVALID;
@@ -75,7 +74,7 @@ thread_id()
 
 void
 thread_stub(void (*fn) (void *), void *parg){
-    int enabled = interrupts_on();
+    interrupts_on();
     assert(interrupts_enabled());
 
     (*fn)(parg);
@@ -367,7 +366,8 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
-    
+
+    interrupts_set(enabled);
     exit(0);
 }
 
