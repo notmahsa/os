@@ -106,7 +106,7 @@ thread_append_to_ready_queue(Tid id){
     struct ready_queue * push = ready_head;
     for(push = ready_head; push != NULL; push = push->next)
     {
-        if(push->next == NULL)
+        if (push->next == NULL)
         {
             struct ready_queue * wq;
             wq = malloc(sizeof(struct ready_queue));
@@ -141,6 +141,68 @@ thread_pop_from_ready_queue(Tid id){
     previous = ready_head;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
+        if (pop->id == id)
+        {
+            previous->next = pop->next;
+            free(pop);
+        }
+        previous = pop;
+    }
+    interrupts_set(enabled);
+}
+
+void
+thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
+    int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+    if (wait_head == NULL){
+        struct wait_queue * new_wait_node = malloc(sizeof(struct wait_queue));
+        new_wait_node->id = id;
+        new_wait_node->next = NULL;
+        wait_head = new_wait_node;
+        interrupts_set(enabled);
+        return wait_head;
+    }
+    struct wait_queue * push = wait_head;
+    for(push = wait_head; push != NULL; push = push->next)
+    {
+        if (push->next == NULL)
+        {
+            struct wait_queue * wq;
+            wq = malloc(sizeof(struct wait_queue));
+            assert(wq);
+            wq->id = id;
+            wq->next = NULL;
+            push->next = wq;
+            push->next->id = id;
+            break;
+        }
+    }
+    interrupts_set(enabled);
+    return wait_head;
+}
+
+void
+thread_pop_from_wait_queue(struct wait_queue * wait_head, Tid id){
+    int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+    if (!wait_head){
+        interrupts_set(enabled);
+        return wait_head;
+    }
+    if (wait_head != NULL && wait_head->id == id){
+        struct wait_queue * temp = wait_head->next;
+        free(wait_head);
+        wait_head = temp;
+        interrupts_set(enabled);
+        return wait_head;
+    }
+    struct wait_queue * pop, * previous;
+    previous = wait_head;
+    for(pop = wait_head; pop != NULL; pop = pop->next)
+    {
         if(pop->id == id)
         {
             previous->next = pop->next;
@@ -149,6 +211,7 @@ thread_pop_from_ready_queue(Tid id){
         previous = pop;
     }
     interrupts_set(enabled);
+    return wait_head;
 }
 
 Tid
@@ -275,9 +338,11 @@ thread_yield(Tid want_tid)
         return ret;
     }
 
-    if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
-        interrupts_set(enabled);
-        return THREAD_INVALID;
+    if (want_tid != THREAD_ANY){
+        if (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == false)){
+            interrupts_set(enabled);
+            return THREAD_INVALID;
+        }
     }
 
     if (ready_head == NULL){
@@ -435,8 +500,58 @@ wait_queue_destroy(struct wait_queue *wq)
 Tid
 thread_sleep(struct wait_queue *queue)
 {
-	TBD();
-	return THREAD_FAILED;
+	int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+    if (running->state == 3){
+        interrupts_set(enabled);
+        thread_exit();
+    }
+
+    if (!running){
+        interrupts_set(enabled);
+        return THREAD_FAILED;
+    }
+
+    if (queue == NULL){
+        interrupts_set(enabled);
+        return THREAD_INVALID;
+    }
+
+    if (ready_head == NULL){
+        interrupts_set(enabled);
+        return THREAD_NONE;
+    }
+
+    int err;
+    Tid yield_tid = ready_head->id;
+    int setcontext_called = 0;
+    err = getcontext(running->context);
+    assert(!err);
+
+    if (setcontext_called == 1){
+        interrupts_set(enabled);
+        return yield_tid;
+    }
+
+    setcontext_called = 1;
+    running->state = 1;
+    thread_append_to_wait_queue(queue, running->id);
+
+    struct ready_queue * temp_head = ready_head->next;
+    struct thread * next_thread_to_run;
+    next_thread_to_run = threads_pointer_list[ready_head->id];
+    if (ready_head->next == NULL){
+        thread_implicit_exit(running->id);
+    }
+    free(ready_head);
+    ready_head = temp_head;
+    next_thread_to_run->state = 0;
+    running = next_thread_to_run;
+    setcontext(running->context);
+
+    interrupts_set(enabled);
+    return THREAD_FAILED;
 }
 
 /* when the 'all' parameter is 1, wakeup all threads waiting in the queue.
@@ -519,7 +634,7 @@ lock_release(struct lock *lock)
         thread_wakeup(lock->wait, 1);
         lock->id = -1;
     }
-    
+
     interrupts_set(enabled);
 }
 
