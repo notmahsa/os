@@ -70,7 +70,7 @@ thread_id()
     assert(!interrupts_enabled());
 
 	if (running){
-	    Tid ret = running->id
+	    Tid ret = running->id;
 	    interrupts_set(enabled);
 	    return ret;
 	}
