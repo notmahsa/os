@@ -230,7 +230,7 @@ thread_create(void (*fn) (void *), void *parg)
     // new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
-    // new_context->uc_link = 0;
+    new_context->uc_link = 0;
 
     long long subtraction_factor = (long long)new_stack % (long long)16;
 //    if (sigemptyset(&new_context->uc_sigmask) < 0){
