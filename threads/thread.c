@@ -275,7 +275,7 @@ thread_yield(Tid want_tid)
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
         interrupts_set(enabled);
-        return want_tid;
+        return running->id;
     }
 
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == false)){
