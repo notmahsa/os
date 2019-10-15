@@ -38,12 +38,13 @@ bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
 struct thread * running = NULL;
 struct ready_queue * ready_head = NULL;
+int enabled;
 
 void
 thread_init(void)
 {
-    int enabled;
-     enabled = interrupts_off();
+    enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
 
 	int err;
 	struct thread * first_thread = (struct thread *)malloc(sizeof(struct thread));
@@ -66,8 +67,8 @@ thread_init(void)
 Tid
 thread_id()
 {
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
 
 	if (running){
 	    Tid ret = running->id;
@@ -90,8 +91,8 @@ thread_stub(void (*fn) (void *), void *parg){
 
 void
 thread_append_to_ready_queue(Tid id){
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     if (ready_head == NULL){
         struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
         new_ready_node->id = id;
@@ -120,8 +121,8 @@ thread_append_to_ready_queue(Tid id){
 
 void
 thread_pop_from_ready_queue(Tid id){
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     if (!ready_head){
         interrupts_set(enabled);
         return;
@@ -154,8 +155,8 @@ thread_implicit_exit(Tid tid)
        Only kills the thread. This does not destroy the thread.
        Thread will enter zombie state.
     */
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     if (!threads_exist[tid]){
         interrupts_set(enabled);
 	    return THREAD_NONE;
@@ -187,8 +188,8 @@ thread_implicit_exit(Tid tid)
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     int err;
     struct thread * new_thread = malloc(sizeof(struct thread));
     void * new_stack = malloc(THREAD_MIN_STACK);
@@ -254,8 +255,8 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     if (running->state == 3){
         interrupts_set(enabled);
         thread_exit();
@@ -267,9 +268,8 @@ thread_yield(Tid want_tid)
     }
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
-        Tid ret = running->id;
         interrupts_set(enabled);
-        return ret;
+        return want_tid;
     }
 
     if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
@@ -344,8 +344,8 @@ thread_yield(Tid want_tid)
 void
 thread_exit()
 {
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -374,8 +374,8 @@ thread_kill(Tid tid)
     /*
        Destroys the thread and frees all associated memory.
     */
-    int enabled;
     enabled = interrupts_off();
+    assert(interrupts_enabled == 0);
     if (threads_exist[tid] == false || running->id == tid){
         interrupts_set(enabled);
 	    return THREAD_INVALID;
