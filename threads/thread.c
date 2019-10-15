@@ -277,6 +277,7 @@ thread_yield(Tid want_tid)
 
         if (setcontext_called == 1){
             interrupts_set(enabled);
+            unintr_printf("HERE I AM \n");
             return yield_tid;
         }
 
