@@ -303,8 +303,7 @@ thread_yield(Tid want_tid)
 
         struct ready_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
-        if (next_thread_to_run->id == 0 && ready_head->next == NULL){
-            unintr_printf("%d is ded\n", running->id);
+        if (ready_head->next == NULL){
             thread_implicit_exit(running->id);
         }
         free(ready_head);
