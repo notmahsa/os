@@ -238,11 +238,11 @@ thread_create(void (*fn) (void *), void *parg)
 //        return THREAD_FAILED;
 //    }
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (unsigned long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
-    new_context->uc_mcontext.gregs[REG_RIP] = (unsigned long)thread_stub;
-    new_context->uc_mcontext.gregs[REG_RDI] = (unsigned long)fn;
-    new_context->uc_mcontext.gregs[REG_RSI] = (unsigned long)parg;
-    new_context->uc_mcontext.gregs[REG_RBP] = (unsigned long)new_stack;
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
+    new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
+    new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
+    new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
+    new_context->uc_mcontext.gregs[REG_RBP] = (long long)new_stack;
 
     new_thread->context = new_context;
     new_thread->state = 1;
@@ -302,7 +302,6 @@ thread_yield(Tid want_tid)
         }
 
         setcontext_called = 1;
-
         running->state = 1;
         thread_append_to_ready_queue(running->id);
 
@@ -352,7 +351,7 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-    // free(running->context->uc_stack.ss_sp);
+    free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
     running = NULL;
@@ -391,7 +390,7 @@ thread_kill(Tid tid)
     thread_to_be_killed->state = 4;
     threads_exist[thread_to_be_killed->id] = false;
     threads_pointer_list[thread_to_be_killed->id] = NULL;
-    // free(thread_to_be_killed->context->uc_stack.ss_sp);
+    free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
     free(thread_to_be_killed);
 
