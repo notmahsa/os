@@ -286,7 +286,7 @@ thread_yield(Tid want_tid)
         int err;
         Tid yield_tid = ready_head->id;
         int setcontext_called = 0;
-        unintr_printf("a %d\n", want_id);
+        unintr_printf("a %d\n", want_tid);
         err = getcontext(running->context);
         assert(!err);
 
@@ -294,7 +294,7 @@ thread_yield(Tid want_tid)
             interrupts_set(enabled);
             return yield_tid;
         }
-        unintr_printf("b %d\n", want_id);
+        unintr_printf("b %d\n", want_tid);
         setcontext_called = 1;
         running->state = 1;
         thread_append_to_ready_queue(running->id);
@@ -312,7 +312,7 @@ thread_yield(Tid want_tid)
         setcontext(running->context);
     }
     else{
-        unintr_printf("c %d\n", want_id);
+        unintr_printf("c %d\n", want_tid);
         int err;
         int setcontext_called = 0;
         struct thread * next_thread_to_run;
@@ -332,7 +332,7 @@ thread_yield(Tid want_tid)
         running = next_thread_to_run;
         setcontext(running->context);
     }
-    unintr_printf("d %d\n", want_id);
+    unintr_printf("d %d\n", want_tid);
 
     interrupts_set(enabled);
 	return THREAD_FAILED;
