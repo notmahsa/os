@@ -293,7 +293,7 @@ thread_yield(Tid want_tid)
         assert(!err);
 
         if (setcontext_called == 1){
-            interrupts_set(enabled);
+            interrupts_set(1);
             return yield_tid;
         }
 
