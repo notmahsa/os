@@ -239,7 +239,8 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
-    int enabled = interrupts_off();
+    int enabled;
+    enabled = interrupts_off();
     if (running->state == 3){
         thread_exit();
     }
