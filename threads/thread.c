@@ -306,6 +306,7 @@ thread_yield(Tid want_tid)
             thread_implicit_exit(running->id);
         }
         free(ready_head);
+        unintr_printf("free\n");
         ready_head = temp_head;
         next_thread_to_run->state = 0;
         running = next_thread_to_run;
