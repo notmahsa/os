@@ -157,12 +157,7 @@ thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
     enabled = interrupts_off();
     assert(!interrupts_enabled());
     if (wait_head == NULL){
-        struct wait_queue * new_wait_node = malloc(sizeof(struct wait_queue));
-        new_wait_node->id = id;
-        new_wait_node->next = NULL;
-        wait_head = new_wait_node;
-        interrupts_set(enabled);
-        return wait_head;
+        return;
     }
     struct wait_queue * push = wait_head;
     for(push = wait_head; push != NULL; push = push->next)
@@ -180,7 +175,7 @@ thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
         }
     }
     interrupts_set(enabled);
-    return wait_head;
+    return;
 }
 
 void
@@ -190,14 +185,14 @@ thread_pop_from_wait_queue(struct wait_queue * wait_head, Tid id){
     assert(!interrupts_enabled());
     if (!wait_head){
         interrupts_set(enabled);
-        return wait_head;
+        return;
     }
     if (wait_head != NULL && wait_head->id == id){
         struct wait_queue * temp = wait_head->next;
         free(wait_head);
         wait_head = temp;
         interrupts_set(enabled);
-        return wait_head;
+        return;
     }
     struct wait_queue * pop, * previous;
     previous = wait_head;
@@ -211,7 +206,7 @@ thread_pop_from_wait_queue(struct wait_queue * wait_head, Tid id){
         previous = pop;
     }
     interrupts_set(enabled);
-    return wait_head;
+    return;
 }
 
 Tid
@@ -339,7 +334,7 @@ thread_yield(Tid want_tid)
     }
 
     if (want_tid != THREAD_ANY){
-        if (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == false)){
+        if (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == false){
             interrupts_set(enabled);
             return THREAD_INVALID;
         }
