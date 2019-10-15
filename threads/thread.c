@@ -274,11 +274,12 @@ thread_yield(Tid want_tid)
     }
 
     if (want_tid == THREAD_SELF || want_tid == running->id){
+        Tid ret = running->id;
         interrupts_set(enabled);
-        return running->id;
+        return ret;
     }
 
-    if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == false)){
+    if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
         interrupts_set(enabled);
         return THREAD_INVALID;
     }
@@ -306,11 +307,11 @@ thread_yield(Tid want_tid)
         thread_append_to_ready_queue(running->id);
 
         struct ready_queue * temp_head = ready_head->next;
+        struct thread * next_thread_to_run;
+        next_thread_to_run = threads_pointer_list[ready_head->id];
         if (ready_head->next == NULL){
             thread_implicit_exit(running->id);
         }
-
-        struct thread * next_thread_to_run = threads_pointer_list[ready_head->id];
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
