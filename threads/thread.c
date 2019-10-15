@@ -232,7 +232,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     // new_context->uc_link = 0;
 
-    unsigned long subtraction_factor = (unsigned long)new_stack % (long long)16;
+    unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
 //    if (sigemptyset(&new_context->uc_sigmask) < 0){
 //        interrupts_set(enabled);
 //        return THREAD_FAILED;
