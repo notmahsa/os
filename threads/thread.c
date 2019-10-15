@@ -232,17 +232,17 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     // new_context->uc_link = 0;
 
-    long long subtraction_factor = (long long)new_stack % (long long)16;
+    unsigned long subtraction_factor = (unsigned long)new_stack % (long long)16;
 //    if (sigemptyset(&new_context->uc_sigmask) < 0){
 //        interrupts_set(enabled);
 //        return THREAD_FAILED;
 //    }
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
-    new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
-    new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
-    new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
-    new_context->uc_mcontext.gregs[REG_RBP] = (long long)new_stack;
+    new_context->uc_mcontext.gregs[REG_RSP] = (unsigned long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
+    new_context->uc_mcontext.gregs[REG_RIP] = (unsigned long)thread_stub;
+    new_context->uc_mcontext.gregs[REG_RDI] = (unsigned long)fn;
+    new_context->uc_mcontext.gregs[REG_RSI] = (unsigned long)parg;
+    new_context->uc_mcontext.gregs[REG_RBP] = (unsigned long)new_stack;
 
     new_thread->context = new_context;
     new_thread->state = 1;
