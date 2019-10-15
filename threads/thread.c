@@ -286,7 +286,7 @@ thread_yield(Tid want_tid)
         int err;
         Tid yield_tid = ready_head->id;
         int setcontext_called = 0;
-        unintr_printf("a %d running\n", want_tid, running->id);
+        unintr_printf("a %d running %d\n", want_tid, running->id);
         err = getcontext(running->context);
         assert(!err);
 
