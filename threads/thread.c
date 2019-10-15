@@ -233,10 +233,10 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_link = 0;
 
     long long subtraction_factor = (long long)new_stack % (long long)16;
-//    if (sigemptyset(&new_context->uc_sigmask) < 0){
-//        interrupts_set(enabled);
-//        return THREAD_FAILED;
-//    }
+    if (sigemptyset(&new_context->uc_sigmask) < 0){
+        interrupts_set(enabled);
+        return THREAD_FAILED;
+    }
 
     new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
