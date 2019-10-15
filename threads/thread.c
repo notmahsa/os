@@ -81,7 +81,7 @@ thread_id()
 
 void
 thread_stub(void (*fn) (void *), void *parg){
-    int enabled = interrupts_off();
+    int enabled = interrupts_on();
     assert(!interrupts_enabled());
     (*fn)(parg);
     interrupts_set(enabled);
