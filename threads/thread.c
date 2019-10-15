@@ -227,7 +227,7 @@ thread_create(void (*fn) (void *), void *parg)
     err = getcontext(new_context);
     assert(!err);
 
-    new_context->uc_stack.ss_sp = new_stack;
+    // new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
     // new_context->uc_link = 0;
