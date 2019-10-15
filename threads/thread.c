@@ -170,8 +170,7 @@ thread_implicit_exit(Tid tid)
     struct ready_queue * pop;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
-        if(pop->id == tid)
-        {
+        if(pop->id == tid){
             already_in_ready_queue = true;
             break;
         }
