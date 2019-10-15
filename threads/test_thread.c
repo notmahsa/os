@@ -330,7 +330,7 @@ test_preemptive()
 		assert(thread_ret_ok(potato_tids[ii]));
 	}
 
-	spin(3 * DURATION);
+	spin(DURATION);
 
 	unintr_printf("cleaning hot potato\n");
 
