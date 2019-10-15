@@ -65,12 +65,21 @@ thread_init(void)
 Tid
 thread_id()
 {
-    return running->id;
+    int enabled = interrupts_off();
+
+	if (running){
+	    Tid ret = running->id;
+	    interrupts_set(enabled);
+	    return ret;
+	}
+
+	interrupts_set(enabled);
+	return THREAD_INVALID;
 }
 
 void
 thread_stub(void (*fn) (void *), void *parg){
-    interrupts_on();
+    int enabled = interrupts_on();
     (*fn)(parg);
     thread_exit();
 
@@ -239,9 +248,9 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
-    int enabled;
-    enabled = interrupts_off();
+    int enabled = interrupts_off();
     if (running->state == 3){
+        interrupts_set(enabled);
         thread_exit();
     }
 
@@ -273,11 +282,10 @@ thread_yield(Tid want_tid)
         struct thread * next_thread_to_run;
 
         err = getcontext(running->context);
-        interrupts_off();
+        interrupts_off(); 
         assert(!err);
 
         if (setcontext_called == 1){
-            unintr_printf("HERE I AM %d\n", running->id);
             interrupts_set(enabled);
             return yield_tid;
         }
