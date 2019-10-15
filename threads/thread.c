@@ -221,12 +221,12 @@ thread_create(void (*fn) (void *), void *parg)
     err = getcontext(new_context);
     assert(!err);
 
-    new_context->uc_stack.ss_sp = new_stack;
+    // new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
     new_context->uc_link = 0;
 
-    unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
+    long long subtraction_factor = (long long)new_stack % (long long)16;
     if (sigemptyset(&new_context->uc_sigmask) < 0){
         interrupts_set(enabled);
         return THREAD_FAILED;
@@ -294,10 +294,11 @@ thread_yield(Tid want_tid)
             interrupts_set(enabled);
             return yield_tid;
         }
-        unintr_printf("b %d\n", want_tid);
+
+        thread_append_to_ready_queue(running->id);
+        unintr_printf("b %d running %d\n", want_tid, running->id);
         setcontext_called = 1;
         running->state = 1;
-        thread_append_to_ready_queue(running->id);
 
         struct ready_queue * temp_head = ready_head->next;
         struct thread * next_thread_to_run;
@@ -306,14 +307,15 @@ thread_yield(Tid want_tid)
             thread_implicit_exit(running->id);
         }
         free(ready_head);
-        unintr_printf("free\n");
         ready_head = temp_head;
         next_thread_to_run->state = 0;
         running = next_thread_to_run;
+        unintr_printf("free\n");
         setcontext(running->context);
+        unintr_printf("out here %d\n", want_tid);
     }
     else{
-        unintr_printf("c %d\n", want_tid);
+        unintr_printf("c running %d\n", want_tid, running->id);
         int err;
         int setcontext_called = 0;
         struct thread * next_thread_to_run;
