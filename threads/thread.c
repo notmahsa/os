@@ -535,7 +535,8 @@ thread_sleep(struct wait_queue *queue)
     }
 
     setcontext_called = 1;
-    running->state = 1;
+    running->state = 2;
+    thread_pop_from_ready_queue(running->id);
     thread_append_to_wait_queue(queue, running->id);
 
     struct ready_queue * temp_head = ready_head->next;
@@ -563,7 +564,7 @@ thread_wakeup(struct wait_queue *queue, int all)
     enabled = interrupts_off();
     assert(!interrupts_enabled());
 
-    if (queue == NULL){
+    if (queue == NULL || queue->next == NULL){
         interrupts_set(enabled);
         return 0;
     }
@@ -581,13 +582,14 @@ thread_wakeup(struct wait_queue *queue, int all)
 
     int counter = 0;
     struct wait_queue * queue_iter = queue;
-    while(queue_iter->next != NULL) {
+    while (queue_iter->next != NULL) {
         thread_append_to_ready_queue(queue_iter->id);
         counter++;
         struct wait_queue * temp_head = queue_iter;
         queue_iter = queue_iter->next;
         free(temp_head);
     }
+    queue = NULL;
     interrupts_set(enabled);
     return counter;
 }
