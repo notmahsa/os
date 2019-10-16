@@ -471,16 +471,14 @@ wait_queue_destroy(struct wait_queue *wq)
     int enabled = interrupts_off();
     assert(!interrupts_enabled());
 
-	struct wait_queue * next;
-	struct wait_queue * current = wq->next;
+	struct wait_queue * current = wq;
 
-    while (current != NULL){
-       next = current->next;
-       free(current);
-       current = next;
+    while(current != NULL){
+        current = wq->next;
+        free(wq);
+        wq = current;
     }
 
-    free(wq);
 	interrupts_set(enabled);
 }
 
@@ -578,11 +576,11 @@ thread_wakeup(struct wait_queue *queue, int all)
         threads_pointer_list[queue_iter->id]->state = 1;
         counter++;
 
-        struct wait_queue * temp_head = queue_iter;
-        queue_iter = queue_iter->next;
-        queue->next = queue_iter;
-        free(temp_head);
+        struct wait_queue * temp_next = queue_iter->next;
+        free(queue_iter);
+        queue_iter = temp_next;
     }
+    queue->next = NULL;
 
     interrupts_set(enabled);
     return counter;
