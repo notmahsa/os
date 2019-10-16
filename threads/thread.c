@@ -103,7 +103,7 @@ thread_append_to_ready_queue(Tid id){
         if (push->next == NULL)
         {
             struct wait_queue * wq;
-            wq = wait_queue_create()
+            wq = wait_queue_create();
             wq->id = id;
             push->next = wq;
             push->next->id = id;
