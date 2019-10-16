@@ -280,7 +280,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     // new_context->uc_link = 0;
 
-    unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
+    // unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
 
     new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
