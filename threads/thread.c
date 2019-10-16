@@ -564,21 +564,47 @@ thread_wakeup(struct wait_queue *queue, int all)
         return 1;
     }
 
-    int counter = 0;
-    struct wait_queue * queue_iter = queue->next;
-    while (queue_iter != NULL) {
-        thread_append_to_ready_queue(queue_iter->id);
-        threads_pointer_list[queue_iter->id]->state = 1;
+
+    struct wait_queue *queue_iter = queue;
+
+    while(queue_iter->next != NULL){
         counter++;
-
-        struct wait_queue * temp_next = queue_iter->next;
-        free(queue_iter);
-        queue_iter = temp_next;
+        queue_iter = queue_iter->next;
     }
-    queue->next = NULL;
 
+    if(ready_head == NULL) {
+        ready_head = queue->next;
+        queue->next = NULL;
+    }
+    else {
+        queue_iter = ready_head;
+        while(queue_iter->next != NULL){
+            queue_iter = queue_iter->next;
+        }
+        queue_iter->next = queue->next;
+        queue->next = NULL;
+    }
     interrupts_set(enabled);
     return counter;
+
+
+
+
+//    int counter = 0;
+//    struct wait_queue * queue_iter = queue->next;
+//    while (queue_iter != NULL) {
+//        thread_append_to_ready_queue(queue_iter->id);
+//        threads_pointer_list[queue_iter->id]->state = 1;
+//        counter++;
+//
+//        struct wait_queue * temp_next = queue_iter->next;
+//        free(queue_iter);
+//        queue_iter = temp_next;
+//    }
+//    queue->next = NULL;
+//
+//    interrupts_set(enabled);
+//    return counter;
 }
 
 /* suspend current thread until Thread tid exits */
