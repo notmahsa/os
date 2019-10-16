@@ -278,11 +278,11 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
-    new_context->uc_link = 0;
+    // new_context->uc_link = 0;
 
     unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
@@ -559,7 +559,7 @@ thread_wakeup(struct wait_queue *queue, int all)
         struct wait_queue * new_head = queue->next->next;
         Tid id = queue->next->id;
         threads_pointer_list[id]->state = 1;
-        
+
         free(queue->next);
         queue->next = new_head;
         thread_append_to_ready_queue(id);
