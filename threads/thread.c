@@ -280,9 +280,9 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_flags = 0;
     // new_context->uc_link = 0;
 
-    // unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
+    unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
 
-    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - 8);
+    new_context->uc_mcontext.gregs[REG_RSP] = (long long)(new_stack + THREAD_MIN_STACK - subtraction_factor - 8);
     new_context->uc_mcontext.gregs[REG_RIP] = (long long)thread_stub;
     new_context->uc_mcontext.gregs[REG_RDI] = (long long)fn;
     new_context->uc_mcontext.gregs[REG_RSI] = (long long)parg;
@@ -470,8 +470,9 @@ wait_queue_destroy(struct wait_queue *wq)
 {
     int enabled = interrupts_off();
     assert(!interrupts_enabled());
+
 	struct wait_queue * next;
-	struct wait_queue * current = wq;
+	struct wait_queue * current = wq->next;
 
     while (current != NULL){
        next = current->next;
@@ -479,6 +480,7 @@ wait_queue_destroy(struct wait_queue *wq)
        current = next;
     }
 
+    free(wq);
 	interrupts_set(enabled);
 }
 
@@ -521,6 +523,7 @@ thread_sleep(struct wait_queue *queue)
 
     setcontext_called = 1;
     running->state = 2;
+
     thread_pop_from_ready_queue(running->id);
     thread_append_to_wait_queue(queue, running->id);
 
