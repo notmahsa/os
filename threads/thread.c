@@ -13,11 +13,6 @@
  4  T  stopped (either by a job control signal or because it is being traced)
 */
 
-struct ready_queue {
-    Tid id;
-    struct ready_queue * next;
-};
-
 /* This is the wait queue structure */
 struct wait_queue {
 	/* ... Fill this in Lab 3 ... */
@@ -37,7 +32,7 @@ struct thread {
 bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
 struct thread * running = NULL;
-struct ready_queue * ready_head = NULL;
+struct wait_queue * ready_head = NULL;
 
 void
 thread_init(void)
@@ -96,20 +91,20 @@ thread_append_to_ready_queue(Tid id){
     enabled = interrupts_off();
     assert(!interrupts_enabled());
     if (ready_head == NULL){
-        struct ready_queue * new_ready_node = malloc(sizeof(struct ready_queue));
+        struct wait_queue * new_ready_node = malloc(sizeof(struct wait_queue));
         new_ready_node->id = id;
         new_ready_node->next = NULL;
         ready_head = new_ready_node;
         interrupts_set(enabled);
         return;
     }
-    struct ready_queue * push = ready_head;
+    struct wait_queue * push = ready_head;
     for(push = ready_head; push != NULL; push = push->next)
     {
         if (push->next == NULL)
         {
-            struct ready_queue * wq;
-            wq = malloc(sizeof(struct ready_queue));
+            struct wait_queue * wq;
+            wq = malloc(sizeof(struct wait_queue));
             assert(wq);
             wq->id = id;
             wq->next = NULL;
@@ -131,13 +126,13 @@ thread_pop_from_ready_queue(Tid id){
         return;
     }
     if(ready_head != NULL && ready_head->id == id){
-        struct ready_queue * temp = ready_head->next;
+        struct wait_queue * temp = ready_head->next;
         free(ready_head);
         ready_head = temp;
         interrupts_set(enabled);
         return;
     }
-    struct ready_queue * pop, * previous;
+    struct wait_queue * pop, * previous;
     previous = ready_head;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
@@ -218,7 +213,7 @@ thread_implicit_exit(Tid tid)
     thread_to_be_killed->state = 3;
 
     bool already_in_ready_queue = false;
-    struct ready_queue * pop;
+    struct wait_queue * pop;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
         if(pop->id == tid){
@@ -351,7 +346,7 @@ thread_yield(Tid want_tid)
         running->state = 1;
         thread_append_to_ready_queue(running->id);
 
-        struct ready_queue * temp_head = ready_head->next;
+        struct wait_queue * temp_head = ready_head->next;
         struct thread * next_thread_to_run;
         next_thread_to_run = threads_pointer_list[ready_head->id];
         if (ready_head->next == NULL){
@@ -404,7 +399,7 @@ thread_exit()
 
     if (ready_head){
         struct thread * next_thread_to_run;
-        struct ready_queue * temp_head = ready_head->next;
+        struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
         free(ready_head);
         ready_head = temp_head;
@@ -525,7 +520,7 @@ thread_sleep(struct wait_queue *queue)
     thread_pop_from_ready_queue(running->id);
     thread_append_to_wait_queue(queue, running->id);
 
-    struct ready_queue * temp_head = ready_head->next;
+    struct wait_queue * temp_head = ready_head->next;
     struct thread * next_thread_to_run = threads_pointer_list[ready_head->id];
 
     if (ready_head->next == NULL){
