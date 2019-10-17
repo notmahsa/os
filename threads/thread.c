@@ -13,6 +13,17 @@
  4  T  stopped (either by a job control signal or because it is being traced)
 */
 
+/*
+==29935== 20,480 bytes in 1,280 blocks are definitely lost in loss record 3 of 3
+==29935==    at 0x4C2BBAF: malloc (vg_replace_malloc.c:299)
+==29935==    by 0x10C921: wait_queue_create (thread.c:450)
+==29935==    by 0x10BD13: thread_append_to_ready_queue (thread.c:106)
+==29935==    by 0x10C0D7: thread_implicit_exit (thread.c:227)
+==29935==    by 0x10CBA0: thread_sleep (thread.c:524)
+==29935==    by 0x109F7C: test_wakeup_thread (test_thread.c:423)
+==29935==    by 0x10BC65: thread_stub (thread.c:82)
+*/
+
 /* This is the wait queue structure */
 struct wait_queue {
 	/* ... Fill this in Lab 3 ... */
@@ -27,6 +38,7 @@ struct thread {
 	unsigned short int state;
 	void * parg;
 	void (*fn) (void *);
+	struct wait_queue * wait;
 };
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
@@ -48,6 +60,7 @@ thread_init(void)
     first_thread->context = context;
     first_thread->state = 0;
     first_thread->id = 0;
+    first_thread->wait = NULL;
 
     threads_pointer_list[first_thread->id] = first_thread;
     threads_exist[first_thread->id] = true;
@@ -91,7 +104,8 @@ thread_append_to_ready_queue(Tid id){
     enabled = interrupts_off();
     assert(!interrupts_enabled());
     if (ready_head == NULL){
-        struct wait_queue * new_ready_node = wait_queue_create();
+        struct wait_queue * new_ready_node = malloc(sizeof(struct wait_queue));
+        new_ready_node->next = NULL;
         new_ready_node->id = id;
         ready_head = new_ready_node;
         interrupts_set(enabled);
@@ -131,10 +145,8 @@ thread_pop_from_ready_queue(Tid id){
     }
     struct wait_queue * pop, * previous;
     previous = ready_head;
-    for (pop = ready_head; pop != NULL; pop = pop->next)
-    {
-        if (pop->id == id)
-        {
+    for (pop = ready_head; pop != NULL; pop = pop->next){
+        if (pop->id == id){
             previous->next = pop->next;
             free(pop);
         }
@@ -160,6 +172,7 @@ thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
             struct wait_queue * wq = wait_queue_create();
             push->next = wq;
             push->next->id = id;
+            threads_pointer_list[id]->wait = wait_head;
             interrupts_set(enabled);
             return;
         }
@@ -462,9 +475,7 @@ wait_queue_destroy(struct wait_queue *wq)
 {
     int enabled = interrupts_off();
     assert(!interrupts_enabled());
-
 	struct wait_queue * current = wq;
-
     while(current != NULL){
         current = wq->next;
         free(wq);
