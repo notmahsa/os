@@ -42,6 +42,7 @@ struct thread {
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
+struct wait_queue * threads_wait_list[THREAD_MAX_THREADS] = { NULL };
 struct thread * running = NULL;
 struct wait_queue * ready_head = NULL;
 
@@ -66,6 +67,9 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
+    for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        threads_wait_list[i] = wait_queue_create();
+    }
 
     interrupts_set(enabled);
 }
@@ -401,6 +405,7 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
+    thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
@@ -416,6 +421,11 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
+
+    for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        wait_queue_destroy(threads_wait_list[i]);
+    }
+
     interrupts_set(enabled);
     exit(0);
 }
@@ -492,8 +502,9 @@ thread_sleep(struct wait_queue *queue)
     assert(!interrupts_enabled());
 
     if (!running){
+        unintr_printf("Nothing is running!\n");
         interrupts_set(enabled);
-        return THREAD_FAILED;
+        exit(0);
     }
 
     if (queue == NULL){
@@ -506,10 +517,9 @@ thread_sleep(struct wait_queue *queue)
         return THREAD_NONE;
     }
 
-    int err;
     Tid yield_tid = ready_head->id;
     int setcontext_called = 0;
-    err = getcontext(running->context);
+    int err = getcontext(running->context);
     assert(!err);
 
     if (setcontext_called == 1){
@@ -520,15 +530,14 @@ thread_sleep(struct wait_queue *queue)
     setcontext_called = 1;
     running->state = 2;
 
+    // This should never actually remove anything.
     thread_pop_from_ready_queue(running->id);
+
+    // Append to correct wait queue.
     thread_append_to_wait_queue(queue, running->id);
 
     struct wait_queue * temp_head = ready_head->next;
     struct thread * next_thread_to_run = threads_pointer_list[ready_head->id];
-
-    if (ready_head->next == NULL){
-        thread_implicit_exit(running->id);
-    }
 
     free(ready_head);
     ready_head = temp_head;
@@ -596,8 +605,18 @@ thread_wakeup(struct wait_queue *queue, int all)
 Tid
 thread_wait(Tid tid)
 {
-	TBD();
-	return 0;
+	int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+
+    if(tid >= THREAD_MAX_THREADS || tid < 0 || threads_exist[tid] == false || tid == running->id){
+        interrupts_set(enabled);
+        return THREAD_INVALID;
+    }
+
+    thread_sleep(threads_wait_list[tid]);
+    interrupts_set(enabled);
+	return tid;
 }
 
 struct lock {
@@ -674,49 +693,80 @@ struct cv {
 struct cv *
 cv_create()
 {
+    int enabled = interrupts_off();
+    assert(!interrupts_enabled());
 	struct cv *cv;
 
 	cv = malloc(sizeof(struct cv));
 	assert(cv);
 
-	TBD();
+    cv->wait = wait_queue_create();
 
-	return cv;
+    interrupts_set(enabled);
+    return cv;
 }
 
 void
 cv_destroy(struct cv *cv)
 {
-	assert(cv != NULL);
 
-	TBD();
+    int enabled = interrupts_off();
+    assert(!interrupts_enabled());
+    assert(cv != NULL);
 
-	free(cv);
+    if(cv->wait->next == NULL){
+        wait_queue_destroy(cv->wait);
+        free(cv);
+    }
+    interrupts_set(enabled);
 }
 
 void
 cv_wait(struct cv *cv, struct lock *lock)
 {
-	assert(cv != NULL);
-	assert(lock != NULL);
+	int enabled = interrupts_off();
+	assert(!interrupts_enabled());
 
-	TBD();
+    assert(cv != NULL);
+    assert(lock != NULL);
+
+    if(lock->id == running->id){
+        lock_release(lock);
+        thread_sleep(cv->wait);
+        lock_acquire(lock);
+    }
+
+    interrupts_set(enabled);
 }
 
 void
 cv_signal(struct cv *cv, struct lock *lock)
 {
-	assert(cv != NULL);
-	assert(lock != NULL);
+	int enabled = interrupts_off();
+	assert(!interrupts_enabled());
 
-	TBD();
+    assert(cv != NULL);
+    assert(lock != NULL);
+
+    if(lock->id == running->id){
+        thread_wakeup(cv->wait, 0);
+    }
+
+    interrupts_set(enabled);
 }
 
 void
 cv_broadcast(struct cv *cv, struct lock *lock)
 {
-	assert(cv != NULL);
-	assert(lock != NULL);
+	int enabled = interrupts_off();
+    assert(!interrupts_enabled());
 
-	TBD();
+    assert(cv != NULL);
+    assert(lock != NULL);
+
+    if(lock->id == running->id){
+        thread_wakeup(cv->wait, 1);
+    }
+
+    interrupts_set(enabled);
 }
