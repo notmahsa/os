@@ -490,10 +490,6 @@ thread_sleep(struct wait_queue *queue)
 	int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
-    if (running->state == 3){
-        interrupts_set(enabled);
-        thread_exit();
-    }
 
     if (!running){
         interrupts_set(enabled);
