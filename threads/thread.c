@@ -103,6 +103,9 @@ thread_append_to_ready_queue(Tid id){
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
+
+    thread_pop_from_wait_queue(threads_pointer_list[id]->wait, id);
+
     if (ready_head == NULL){
         struct wait_queue * new_ready_node = malloc(sizeof(struct wait_queue));
         new_ready_node->next = NULL;
@@ -200,6 +203,7 @@ thread_pop_from_wait_queue(struct wait_queue * wait_head, Tid id){
         }
         previous = pop;
     }
+    threads_pointer_list[id]->wait = NULL;
 
     interrupts_set(enabled);
 }
@@ -231,6 +235,8 @@ thread_implicit_exit(Tid tid)
             break;
         }
     }
+
+    thread_pop_from_wait_queue(threads_pointer_list[tid]->wait, tid);
 
     if (already_in_ready_queue){
         interrupts_set(enabled);
@@ -296,6 +302,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_thread->context = new_context;
     new_thread->state = 1;
     new_thread->id = new_id;
+    new_thread->wait = NULL;
 
     threads_pointer_list[new_thread->id] = new_thread;
     threads_exist[new_thread->id] = true;
@@ -399,6 +406,7 @@ thread_exit()
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
+    thread_pop_from_wait_queue(running->wait, running->id);
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -437,6 +445,7 @@ thread_kill(Tid tid)
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
 	thread_pop_from_ready_queue(thread_to_be_killed->id);
+	thread_pop_from_wait_queue(thread_to_be_killed->wait, thread_to_be_killed->id);
 
     thread_to_be_killed->state = 4;
     threads_exist[thread_to_be_killed->id] = false;
