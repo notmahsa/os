@@ -99,6 +99,57 @@ thread_stub(void (*fn) (void *), void *parg){
 }
 
 void
+thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
+    int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+
+    if (wait_head == NULL){
+        interrupts_set(enabled);
+        return;
+    }
+
+    struct wait_queue * push;
+    for (push = wait_head; push != NULL; push = push->next){
+        if (push->next == NULL){
+            struct wait_queue * wq = wait_queue_create();
+            push->next = wq;
+            push->next->id = id;
+            threads_pointer_list[id]->wait = wait_head;
+            interrupts_set(enabled);
+            return;
+        }
+    }
+    interrupts_set(enabled);
+}
+
+void
+thread_pop_from_wait_queue(struct wait_queue * wait_head, Tid id){
+    int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+
+    if (!wait_head || !wait_head->next){
+        interrupts_set(enabled);
+        return;
+    }
+
+    struct wait_queue * pop, * previous;
+    previous = wait_head;
+    for (pop = wait_head->next; pop != NULL; pop = pop->next){
+        if (pop->id == id){
+            previous->next = pop->next;
+            free(pop);
+        }
+        previous = pop;
+    }
+    threads_pointer_list[id]->wait = NULL;
+
+    interrupts_set(enabled);
+}
+
+
+void
 thread_append_to_ready_queue(Tid id){
     int enabled;
     enabled = interrupts_off();
@@ -155,56 +206,6 @@ thread_pop_from_ready_queue(Tid id){
         }
         previous = pop;
     }
-    interrupts_set(enabled);
-}
-
-void
-thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
-    int enabled;
-    enabled = interrupts_off();
-    assert(!interrupts_enabled());
-
-    if (wait_head == NULL){
-        interrupts_set(enabled);
-        return;
-    }
-
-    struct wait_queue * push;
-    for (push = wait_head; push != NULL; push = push->next){
-        if (push->next == NULL){
-            struct wait_queue * wq = wait_queue_create();
-            push->next = wq;
-            push->next->id = id;
-            threads_pointer_list[id]->wait = wait_head;
-            interrupts_set(enabled);
-            return;
-        }
-    }
-    interrupts_set(enabled);
-}
-
-void
-thread_pop_from_wait_queue(struct wait_queue * wait_head, Tid id){
-    int enabled;
-    enabled = interrupts_off();
-    assert(!interrupts_enabled());
-
-    if (!wait_head || !wait_head->next){
-        interrupts_set(enabled);
-        return;
-    }
-
-    struct wait_queue * pop, * previous;
-    previous = wait_head;
-    for (pop = wait_head->next; pop != NULL; pop = pop->next){
-        if (pop->id == id){
-            previous->next = pop->next;
-            free(pop);
-        }
-        previous = pop;
-    }
-    threads_pointer_list[id]->wait = NULL;
-
     interrupts_set(enabled);
 }
 
