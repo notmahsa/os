@@ -468,11 +468,12 @@ thread_kill(Tid tid)
 	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
-	thread_pop_from_ready_queue(thread_to_be_killed->id);
+	thread_wakeup(threads_wait_list[tid]->wait, 1;
+	thread_pop_from_ready_queue(tid);
 
     thread_to_be_killed->state = 4;
-    threads_exist[thread_to_be_killed->id] = false;
-    threads_pointer_list[thread_to_be_killed->id] = NULL;
+    threads_exist[tid] = false;
+    threads_pointer_list[tid] = NULL;
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
     free(thread_to_be_killed);
