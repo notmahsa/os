@@ -416,6 +416,7 @@ thread_exit()
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
+        printf("%p eirynoileuybritouyenlrutbelyrbil\n", next_thread_to_run);
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
