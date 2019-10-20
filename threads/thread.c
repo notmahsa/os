@@ -38,6 +38,7 @@ struct thread {
 	unsigned short int state;
 	void * parg;
 	void (*fn) (void *);
+	struct wait_queue * wait;
 };
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
