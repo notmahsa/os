@@ -423,6 +423,37 @@ void print_wait(Tid id){
     interrupts_set(enabled);
 }
 
+void clean_ready(){
+    int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+
+    if (!ready_head){
+        interrupts_set(enabled);
+        return;
+    }
+
+    if (ready_head->next){
+        struct wait_queue * pop, * previous;
+        previous = ready_head;
+        for (pop = ready_head->next; pop != NULL; pop = pop->next){
+            if (threads_pointer_list[pop->id] == NULL){
+                previous->next = pop->next;
+                free(pop);
+            }
+            previous = pop;
+        }
+    }
+
+    if (threads_pointer_list[ready_head->id] == NULL){
+        struct wait_queue * temp = ready_head->next;
+        free(ready_head);
+        ready_head = temp;
+    }
+
+    interrupts_set(enabled);
+}
+
 void
 thread_exit()
 {
@@ -435,9 +466,6 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-//    printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
-//    printf("%p 3 %p ID %d\nEXIT ", running, ready_head, running->id);
-//    print_ready();
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
@@ -447,8 +475,6 @@ thread_exit()
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
-//        printf("%p INSIDE IF %p ID %d\nEXIT ", next_thread_to_run, ready_head, ready_head->id);
-//        print_ready();
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
@@ -484,11 +510,8 @@ thread_kill(Tid tid)
 	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
-//	print_wait(tid);
 	thread_wakeup(threads_wait_list[tid], 1);
 	thread_pop_from_ready_queue(tid);
-//	printf("KILL ");
-//	print_ready();
 
     thread_to_be_killed->state = 4;
     threads_exist[tid] = false;
@@ -618,35 +641,35 @@ thread_wakeup(struct wait_queue *queue, int all)
         return 1;
     }
 
-    struct wait_queue *queue_iter = queue->next;
-    int counter = 0;
-    while(queue_iter != NULL){
-        counter++;
-        if (threads_pointer_list[queue_iter->id]){
-            thread_append_to_ready_queue(queue_iter->id);
-        }
-        queue_iter = queue_iter->next;
-    }
-
-    queue_iter = queue->next;
-    while(queue_iter != NULL){
-        thread_pop_from_wait_queue(queue, queue_iter->id);
-        queue_iter = queue_iter->next;
-    }
-
-//    if(ready_head == NULL) {
-//        ready_head = queue->next;
-//        queue->next = NULL;
-//        interrupts_set(enabled);
-//        return counter;
-//    }
-//
-//    queue_iter = ready_head;
-//    while(queue_iter->next != NULL){
+//    struct wait_queue *queue_iter = queue->next;
+//    int counter = 0;
+//    while(queue_iter != NULL){
+//        counter++;
+//        if (threads_pointer_list[queue_iter->id]){
+//            thread_append_to_ready_queue(queue_iter->id);
+//        }
 //        queue_iter = queue_iter->next;
 //    }
-//    queue_iter->next = queue->next;
-//    queue->next = NULL;
+//
+//    queue_iter = queue->next;
+//    while(queue_iter != NULL){
+//        thread_pop_from_wait_queue(queue, queue_iter->id);
+//        queue_iter = queue_iter->next;
+//    }
+
+    if(ready_head == NULL) {
+        ready_head = queue->next;
+        queue->next = NULL;
+        interrupts_set(enabled);
+        return counter;
+    }
+
+    queue_iter = ready_head;
+    while(queue_iter->next != NULL){
+        queue_iter = queue_iter->next;
+    }
+    queue_iter->next = queue->next;
+    queue->next = NULL;
 
     interrupts_set(enabled);
     return counter;
