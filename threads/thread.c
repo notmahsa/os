@@ -402,12 +402,13 @@ thread_exit()
     enabled = interrupts_off();
     assert(!interrupts_enabled());
 
+    thread_wakeup(threads_wait_list[running->id], 1);
+
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
     // printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
     // printf("%p 3 %p ID %d\n", running, ready_head, running->id);
-    thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
