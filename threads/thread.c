@@ -404,6 +404,7 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
+    thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
@@ -420,9 +421,9 @@ thread_exit()
         setcontext(running->context);
     }
 
-    for (int i = 0; i < THREAD_MAX_THREADS; i++){
-        wait_queue_destroy(threads_wait_list[i]);
-    }
+//    for (int i = 0; i < THREAD_MAX_THREADS; i++){
+//        wait_queue_destroy(threads_wait_list[i]);
+//    }
 
     interrupts_set(enabled);
     exit(0);
