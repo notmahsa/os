@@ -404,6 +404,8 @@ thread_exit()
     assert(!interrupts_enabled());
     running->state = 4;
     threads_exist[running->id] = 0;
+    wait_queue_destroy(threads_wait_list[running->id]);
+    threads_wait_list[running->id] = wait_queue_create();
     threads_pointer_list[running->id] = NULL;
     thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
