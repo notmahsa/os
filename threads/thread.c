@@ -509,6 +509,7 @@ thread_kill(Tid tid)
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
 	thread_pop_from_ready_queue(thread_to_be_killed->id);
+	thread_wakeup(threads_wait_list[thread_to_be_killed->id], 1);
 
     thread_to_be_killed->state = 4;
     threads_exist[thread_to_be_killed->id] = false;
@@ -633,6 +634,7 @@ thread_wakeup(struct wait_queue *queue, int all)
         free(queue->next);
         queue->next = new_head;
         thread_append_to_ready_queue(id);
+        clean_ready();
 
         interrupts_set(enabled);
         return 1;
@@ -648,6 +650,7 @@ thread_wakeup(struct wait_queue *queue, int all)
     if(ready_head == NULL) {
         ready_head = queue->next;
         queue->next = NULL;
+        clean_ready();
         interrupts_set(enabled);
         return counter;
     }
@@ -656,8 +659,11 @@ thread_wakeup(struct wait_queue *queue, int all)
     while(queue_iter->next != NULL){
         queue_iter = queue_iter->next;
     }
+
     queue_iter->next = queue->next;
     queue->next = NULL;
+
+    clean_ready();
 
     interrupts_set(enabled);
     return counter;
