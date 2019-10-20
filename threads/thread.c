@@ -239,21 +239,6 @@ thread_implicit_exit(Tid tid)
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
     thread_to_be_killed->state = 3;
 
-    bool already_in_ready_queue = false;
-    struct wait_queue * pop;
-    for(pop = ready_head; pop != NULL; pop = pop->next)
-    {
-        if(pop->id == tid){
-            already_in_ready_queue = true;
-            break;
-        }
-    }
-
-    if (already_in_ready_queue){
-        interrupts_set(enabled);
-        return tid;
-    }
-
     thread_append_to_ready_queue(thread_to_be_killed->id);
     interrupts_set(enabled);
     return tid;
