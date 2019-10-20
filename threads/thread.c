@@ -558,6 +558,11 @@ thread_wakeup(struct wait_queue *queue, int all)
     enabled = interrupts_off();
     assert(!interrupts_enabled());
 
+    if (running->state == 3){
+        interrupts_set(enabled);
+        thread_exit();
+    }
+
     if (queue == NULL || queue->next == NULL){
         interrupts_set(enabled);
         return 0;
