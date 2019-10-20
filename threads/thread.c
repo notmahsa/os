@@ -56,7 +56,6 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
-
     for (int i = 0; i < THREAD_MAX_THREADS; i++){
         threads_wait_list[i] = wait_queue_create();
     }
@@ -86,6 +85,7 @@ thread_stub(void (*fn) (void *), void *parg){
     interrupts_on();
     (*fn)(parg);
     thread_exit();
+
     exit(0);
 }
 
@@ -288,7 +288,7 @@ thread_create(void (*fn) (void *), void *parg)
     new_context->uc_stack.ss_sp = new_stack;
     new_context->uc_stack.ss_size = THREAD_MIN_STACK;
     new_context->uc_stack.ss_flags = 0;
-    new_context->uc_link = 0;
+    // new_context->uc_link = 0;
 
     unsigned long subtraction_factor = (unsigned long)new_stack % (unsigned long)16;
 
@@ -568,11 +568,6 @@ thread_wakeup(struct wait_queue *queue, int all)
 	int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
-
-    if (running->state == 3){
-        interrupts_set(enabled);
-        thread_exit();
-    }
 
     if (queue == NULL || queue->next == NULL){
         interrupts_set(enabled);
