@@ -43,7 +43,6 @@ struct thread {
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
-struct wait_queue * threads_wait_list[THREAD_MAX_THREADS] = { NULL };
 struct thread * running = NULL;
 struct wait_queue * ready_head = NULL;
 
@@ -61,6 +60,7 @@ thread_init(void)
     first_thread->context = context;
     first_thread->state = 0;
     first_thread->id = 0;
+    first_thread->wait = NULL;
 
     threads_pointer_list[first_thread->id] = first_thread;
     threads_exist[first_thread->id] = true;
@@ -68,9 +68,6 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
-    for (int i = 0; i < THREAD_MAX_THREADS; i++){
-        threads_wait_list[i] = wait_queue_create();
-    }
 
     interrupts_set(enabled);
 }
@@ -235,6 +232,8 @@ thread_implicit_exit(Tid tid)
             break;
         }
     }
+
+    thread_pop_from_wait_queue(threads_pointer_list[tid]->wait, tid);
 
     if (already_in_ready_queue){
         interrupts_set(enabled);
@@ -406,7 +405,6 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-    thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
@@ -422,11 +420,6 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
-
-    for (int i = 0; i < THREAD_MAX_THREADS; i++){
-        wait_queue_destroy(threads_wait_list[i]);
-    }
-
     interrupts_set(enabled);
     exit(0);
 }
