@@ -419,6 +419,11 @@ thread_exit()
         running = next_thread_to_run;
         setcontext(running->context);
     }
+
+    for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        wait_queue_destroy(threads_wait_list[i]);
+    }
+
     interrupts_set(enabled);
     exit(0);
 }
