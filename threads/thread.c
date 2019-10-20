@@ -460,12 +460,10 @@ thread_exit()
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
-
-    thread_wakeup(threads_wait_list[running->id], 1);
-
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
+    thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
@@ -510,12 +508,11 @@ thread_kill(Tid tid)
 	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
-	thread_wakeup(threads_wait_list[tid], 1);
-	thread_pop_from_ready_queue(tid);
+	thread_pop_from_ready_queue(thread_to_be_killed->id);
 
     thread_to_be_killed->state = 4;
-    threads_exist[tid] = false;
-    threads_pointer_list[tid] = NULL;
+    threads_exist[thread_to_be_killed->id] = false;
+    threads_pointer_list[thread_to_be_killed->id] = NULL;
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
     free(thread_to_be_killed);
@@ -641,21 +638,12 @@ thread_wakeup(struct wait_queue *queue, int all)
         return 1;
     }
 
-    struct wait_queue *queue_iter = queue->next;
+    struct wait_queue *queue_iter = queue;
     int counter = 0;
-//    while(queue_iter != NULL){
-//        counter++;
-//        if (threads_pointer_list[queue_iter->id]){
-//            thread_append_to_ready_queue(queue_iter->id);
-//        }
-//        queue_iter = queue_iter->next;
-//    }
-//
-//    queue_iter = queue->next;
-//    while(queue_iter != NULL){
-//        thread_pop_from_wait_queue(queue, queue_iter->id);
-//        queue_iter = queue_iter->next;
-//    }
+    while(queue_iter->next != NULL){
+        counter++;
+        queue_iter = queue_iter->next;
+    }
 
     if(ready_head == NULL) {
         ready_head = queue->next;
