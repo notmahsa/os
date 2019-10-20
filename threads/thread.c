@@ -436,18 +436,20 @@ void clean_ready(){
     bool end = false;
     struct wait_queue * pop = ready_head->next, * previous = ready_head;
 
-    while (!end){
-        if (threads_pointer_list[pop->id] == NULL){
-            previous->next = pop->next;
-            free(pop);
-            pop = previous->next;
-        }
-        else{
-            previous = pop;
-            pop = pop->next;
-        }
-        if (pop == NULL){
-            end = true;
+    if (ready_head->next){
+        while (!end){
+            if (threads_pointer_list[pop->id] == NULL){
+                previous->next = pop->next;
+                free(pop);
+                pop = previous->next;
+            }
+            else{
+                previous = pop;
+                pop = pop->next;
+            }
+            if (pop == NULL){
+                end = true;
+            }
         }
     }
 
