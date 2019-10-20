@@ -163,6 +163,16 @@ thread_append_to_ready_queue(Tid id){
         interrupts_set(enabled);
         return;
     }
+
+    struct wait_queue * pop;
+    for(pop = ready_head; pop != NULL; pop = pop->next)
+    {
+        if(pop->id == tid){
+            interrupts_set(enabled);
+            return;
+        }
+    }
+
     struct wait_queue * push = ready_head;
     for (push = ready_head; push != NULL; push = push->next)
     {
@@ -224,21 +234,6 @@ thread_implicit_exit(Tid tid)
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
     thread_to_be_killed->state = 3;
-
-    bool already_in_ready_queue = false;
-    struct wait_queue * pop;
-    for(pop = ready_head; pop != NULL; pop = pop->next)
-    {
-        if(pop->id == tid){
-            already_in_ready_queue = true;
-            break;
-        }
-    }
-
-    if (already_in_ready_queue){
-        interrupts_set(enabled);
-        return tid;
-    }
 
     thread_append_to_ready_queue(thread_to_be_killed->id);
     interrupts_set(enabled);
@@ -407,6 +402,7 @@ thread_exit()
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
     printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
+    printf("%p 3 %p ID %d\n", running, ready_head, running->id);
     thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
