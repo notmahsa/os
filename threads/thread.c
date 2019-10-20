@@ -409,6 +409,20 @@ void print_ready(){
     interrupts_set(enabled);
 }
 
+void print_wait(Tid id){
+    int enabled;
+    enabled = interrupts_off();
+    assert(!interrupts_enabled());
+    struct wait_queue * current = threads_wait_list[id];
+    printf("WAIT %d: ", id);
+    while (current){
+        printf("%d, ", current->id);
+        current = current->next;
+    }
+    printf("\n");
+    interrupts_set(enabled);
+}
+
 void
 thread_exit()
 {
@@ -470,6 +484,7 @@ thread_kill(Tid tid)
 	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
+	print_wait(tid);
 	thread_wakeup(threads_wait_list[tid], 1);
 	thread_pop_from_ready_queue(tid);
 	printf("KILL ");
