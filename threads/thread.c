@@ -13,17 +13,6 @@
  4  T  stopped (either by a job control signal or because it is being traced)
 */
 
-/*
-==29935== 20,480 bytes in 1,280 blocks are definitely lost in loss record 3 of 3
-==29935==    at 0x4C2BBAF: malloc (vg_replace_malloc.c:299)
-==29935==    by 0x10C921: wait_queue_create (thread.c:450)
-==29935==    by 0x10BD13: thread_append_to_ready_queue (thread.c:106)
-==29935==    by 0x10C0D7: thread_implicit_exit (thread.c:227)
-==29935==    by 0x10CBA0: thread_sleep (thread.c:524)
-==29935==    by 0x109F7C: test_wakeup_thread (test_thread.c:423)
-==29935==    by 0x10BC65: thread_stub (thread.c:82)
-*/
-
 /* This is the wait queue structure */
 struct wait_queue {
 	/* ... Fill this in Lab 3 ... */
@@ -97,7 +86,6 @@ thread_stub(void (*fn) (void *), void *parg){
     interrupts_on();
     (*fn)(parg);
     thread_exit();
-
     exit(0);
 }
 
@@ -112,8 +100,11 @@ thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
         return;
     }
 
+    threads_pointer_list[id]->state = 2;
+
     struct wait_queue * pop;
     for (pop = wait_head; pop != NULL; pop = pop->next){
+        // Check if thread already exists on queue.
         if (pop->id == id){
             interrupts_set(enabled);
             return;
@@ -163,6 +154,8 @@ thread_append_to_ready_queue(Tid id){
     enabled = interrupts_off();
     assert(!interrupts_enabled());
 
+    threads_pointer_list[id]->state = 1;
+
     if (ready_head == NULL){
         struct wait_queue * new_ready_node = wait_queue_create();
         new_ready_node->next = NULL;
@@ -174,6 +167,7 @@ thread_append_to_ready_queue(Tid id){
 
     struct wait_queue * pop;
     for (pop = ready_head; pop != NULL; pop = pop->next){
+        // Check if thread already exists on queue.
         if (pop->id == id){
             interrupts_set(enabled);
             return;
@@ -225,7 +219,7 @@ thread_pop_from_ready_queue(Tid id){
         free(ready_head);
         ready_head = temp;
     }
-    
+
     interrupts_set(enabled);
 }
 
@@ -413,8 +407,8 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-    printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
-    printf("%p 3 %p ID %d\n", running, ready_head, running->id);
+    // printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
+    // printf("%p 3 %p ID %d\n", running, ready_head, running->id);
     thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
@@ -425,7 +419,7 @@ thread_exit()
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
-        printf("%p INSIDE IF %p ID %d\n", next_thread_to_run, ready_head, ready_head->id);
+        // printf("%p INSIDE IF %p ID %d\n", next_thread_to_run, ready_head, ready_head->id);
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
