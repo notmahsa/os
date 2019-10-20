@@ -154,7 +154,6 @@ thread_append_to_ready_queue(Tid id){
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
-
     if (ready_head == NULL){
         struct wait_queue * new_ready_node = malloc(sizeof(struct wait_queue));
         new_ready_node->next = NULL;
@@ -331,11 +330,9 @@ thread_yield(Tid want_tid)
         return ret;
     }
 
-    if (want_tid != THREAD_ANY){
-        if (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == false){
-            interrupts_set(enabled);
-            return THREAD_INVALID;
-        }
+    if (want_tid != THREAD_ANY && (want_tid < 0 || want_tid >= THREAD_MAX_THREADS || threads_exist[want_tid] == 0)){
+        interrupts_set(enabled);
+        return THREAD_INVALID;
     }
 
     if (ready_head == NULL){
@@ -405,7 +402,11 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-    thread_wakeup(threads_wait_list[running->id], 1);
+
+    if (threads_wait_list[running->id] && threads_wait_list[running->id]->next){
+        thread_wakeup(threads_wait_list[running->id], 1);
+    }
+    
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
