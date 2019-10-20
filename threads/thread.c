@@ -402,16 +402,18 @@ thread_exit()
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
+
+    Tid id = running->id;
     running->state = 4;
-    threads_exist[running->id] = 0;
-    threads_pointer_list[running->id] = NULL;
-    thread_wakeup(threads_wait_list[running->id], 1);
+    threads_exist[id] = 0;
+    threads_pointer_list[id] = NULL;
+    thread_wakeup(threads_wait_list[id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
     free(running);
     running = NULL;
 
-    if (ready_head){
+    if (ready_head && id != 0){
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
@@ -423,6 +425,15 @@ thread_exit()
     }
 
     for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        if (threads_pointer_list[i]->context){
+            if (threads_pointer_list[i]->context->uc_stack.ss_sp){
+                free(threads_pointer_list[i]->context->uc_stack.ss_sp);
+            }
+            free(threads_pointer_list[i]->context);
+        }
+        if (threads_pointer_list[i]){
+            free(threads_pointer_list[i]);
+        }
         free(threads_wait_list[i]);
     }
 
@@ -609,7 +620,7 @@ thread_wait(Tid tid)
     enabled = interrupts_off();
     assert(!interrupts_enabled());
 
-    if(tid >= THREAD_MAX_THREADS || tid < 0 || threads_exist[tid] == false || tid == running->id){
+    if (tid >= THREAD_MAX_THREADS || tid < 0 || threads_exist[tid] == false || tid == running->id){
         interrupts_set(enabled);
         return THREAD_INVALID;
     }
