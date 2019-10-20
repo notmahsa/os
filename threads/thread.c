@@ -635,7 +635,7 @@ thread_wakeup(struct wait_queue *queue, int all)
         free(queue->next);
         queue->next = new_head;
         thread_append_to_ready_queue(id);
-        clean_ready();
+        // clean_ready();
 
         interrupts_set(enabled);
         return 1;
@@ -651,7 +651,7 @@ thread_wakeup(struct wait_queue *queue, int all)
     if(ready_head == NULL) {
         ready_head = queue->next;
         queue->next = NULL;
-        clean_ready();
+        // clean_ready();
         interrupts_set(enabled);
         return counter;
     }
@@ -664,7 +664,7 @@ thread_wakeup(struct wait_queue *queue, int all)
     queue_iter->next = queue->next;
     queue->next = NULL;
 
-    clean_ready();
+    // clean_ready();
 
     interrupts_set(enabled);
     return counter;
