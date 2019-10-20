@@ -112,6 +112,14 @@ thread_append_to_wait_queue(struct wait_queue * wait_head, Tid id){
         return;
     }
 
+    struct wait_queue * pop;
+    for (pop = wait_head; pop != NULL; pop = pop->next){
+        if (pop->id == id){
+            interrupts_set(enabled);
+            return;
+        }
+    }
+
     struct wait_queue * push;
     for (push = wait_head; push != NULL; push = push->next){
         if (push->next == NULL){
@@ -165,9 +173,8 @@ thread_append_to_ready_queue(Tid id){
     }
 
     struct wait_queue * pop;
-    for(pop = ready_head; pop != NULL; pop = pop->next)
-    {
-        if(pop->id == id){
+    for (pop = ready_head; pop != NULL; pop = pop->next){
+        if (pop->id == id){
             interrupts_set(enabled);
             return;
         }
@@ -401,8 +408,8 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
-    printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
-    printf("%p 3 %p ID %d\n", running, ready_head, running->id);
+    // printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
+    // printf("%p 3 %p ID %d\n", running, ready_head, running->id);
     thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
@@ -413,7 +420,7 @@ thread_exit()
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
-        printf("%p INSIDE IF %p ID %d\n", next_thread_to_run, ready_head, ready_head->id);
+        // printf("%p INSIDE IF %p ID %d\n", next_thread_to_run, ready_head, ready_head->id);
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
