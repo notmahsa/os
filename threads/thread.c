@@ -435,7 +435,7 @@ void clean_ready(){
 
     bool end = false;
     struct wait_queue * pop = ready_head->next, * previous = ready_head;
-    
+
     while (!end){
         if (threads_pointer_list[pop->id] == NULL){
             previous->next = pop->next;
@@ -476,7 +476,7 @@ thread_exit()
     running = NULL;
 
     if (ready_head){
-        print_ready();
+        // print_ready();
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
