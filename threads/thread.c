@@ -402,7 +402,7 @@ thread_exit()
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
-    
+
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
@@ -503,9 +503,8 @@ thread_sleep(struct wait_queue *queue)
     assert(!interrupts_enabled());
 
     if (!running){
-        unintr_printf("Nothing is running!\n");
         interrupts_set(enabled);
-        exit(0);
+        return THREAD_FAILED;
     }
 
     if (queue == NULL){
