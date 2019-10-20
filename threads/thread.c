@@ -67,6 +67,7 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
+
     for (int i = 0; i < THREAD_MAX_THREADS; i++){
         threads_wait_list[i] = wait_queue_create();
     }
@@ -421,9 +422,10 @@ thread_exit()
         setcontext(running->context);
     }
 
-//    for (int i = 0; i < THREAD_MAX_THREADS; i++){
-//        wait_queue_destroy(threads_wait_list[i]);
-//    }
+    for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        // wait_queue_destroy(threads_wait_list[i]);
+        free(threads_wait_list[i]);
+    }
 
     interrupts_set(enabled);
     exit(0);
@@ -484,7 +486,7 @@ wait_queue_destroy(struct wait_queue *wq)
     int enabled = interrupts_off();
     assert(!interrupts_enabled());
 	struct wait_queue * current = wq;
-    while(current != NULL){
+    while (current != NULL){
         current = wq->next;
         free(wq);
         wq = current;
