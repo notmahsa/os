@@ -622,7 +622,9 @@ thread_wakeup(struct wait_queue *queue, int all)
     int counter = 0;
     while(queue_iter != NULL){
         counter++;
-        thread_append_to_ready_queue(queue_iter->id);
+        if (threads_pointer_list[queue_iter->id]){
+            thread_append_to_ready_queue(queue_iter->id);
+        }
         queue_iter = queue_iter->next;
     }
 
