@@ -396,6 +396,9 @@ thread_yield(Tid want_tid)
 }
 
 void print_ready(){
+    /*
+        Prints all elements in the ready queue, used for debugging.
+    */
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
@@ -410,6 +413,9 @@ void print_ready(){
 }
 
 void print_wait(Tid id){
+    /*
+        Prints all elements in the thread's wait queue, used for debugging.
+    */
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
@@ -424,6 +430,9 @@ void print_wait(Tid id){
 }
 
 void clean_ready(){
+    /*
+        Cleans up killed threads in the ready queue, used inside of thread_wakeup.
+    */
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
@@ -478,7 +487,6 @@ thread_exit()
     running = NULL;
 
     if (ready_head){
-        // print_ready();
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
