@@ -476,7 +476,7 @@ thread_exit()
     running = NULL;
 
     if (ready_head){
-        // print_ready();
+        print_ready();
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
