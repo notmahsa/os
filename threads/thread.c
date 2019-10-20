@@ -167,7 +167,7 @@ thread_append_to_ready_queue(Tid id){
     struct wait_queue * pop;
     for(pop = ready_head; pop != NULL; pop = pop->next)
     {
-        if(pop->id == tid){
+        if(pop->id == id){
             interrupts_set(enabled);
             return;
         }
