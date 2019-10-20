@@ -618,9 +618,9 @@ thread_wakeup(struct wait_queue *queue, int all)
         return 1;
     }
 
-    struct wait_queue *queue_iter = queue;
+    struct wait_queue *queue_iter = queue->next;
     int counter = 0;
-    while(queue_iter->next != NULL){
+    while(queue_iter != NULL){
         counter++;
         thread_append_to_ready_queue(queue_iter->id);
         queue_iter = queue_iter->next;
