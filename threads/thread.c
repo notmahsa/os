@@ -406,6 +406,7 @@ thread_exit()
     running->state = 4;
     threads_exist[running->id] = 0;
     threads_pointer_list[running->id] = NULL;
+    printf("%p OUTSIDE IF %p ID %d\n", running, ready_head, running->id);
     thread_wakeup(threads_wait_list[running->id], 1);
     free(running->context->uc_stack.ss_sp);
     free(running->context);
@@ -416,7 +417,7 @@ thread_exit()
         struct thread * next_thread_to_run;
         struct wait_queue * temp_head = ready_head->next;
         next_thread_to_run = threads_pointer_list[ready_head->id];
-        printf("%p eirynoileuybritouyenlrutbelyrbil %p ID %d\n", next_thread_to_run, ready_head, ready_head->id);
+        printf("%p INSIDE IF %p ID %d\n", next_thread_to_run, ready_head, ready_head->id);
         free(ready_head);
         ready_head = temp_head;
         next_thread_to_run->state = 0;
@@ -456,7 +457,6 @@ thread_kill(Tid tid)
     thread_to_be_killed->state = 4;
     threads_exist[thread_to_be_killed->id] = false;
     thread_pop_from_ready_queue(thread_to_be_killed->id);
-    printf("%d THIS IS IN KILL\n", thread_to_be_killed->id);
     threads_pointer_list[thread_to_be_killed->id] = NULL;
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
