@@ -618,6 +618,7 @@ test_wait_kill(void)
 static void
 test_wait_parent_thread(Tid parent)
 {
+    unintr_printf("Parent %d\n", parent);
 	Tid ret = thread_wait(parent);
 
 	if (ret == parent)
