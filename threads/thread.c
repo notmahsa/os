@@ -38,7 +38,6 @@ struct thread {
 	unsigned short int state;
 	void * parg;
 	void (*fn) (void *);
-	struct wait_queue * wait;
 };
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
@@ -61,7 +60,6 @@ thread_init(void)
     first_thread->context = context;
     first_thread->state = 0;
     first_thread->id = 0;
-    first_thread->wait = NULL;
 
     threads_pointer_list[first_thread->id] = first_thread;
     threads_exist[first_thread->id] = true;
@@ -236,8 +234,6 @@ thread_implicit_exit(Tid tid)
             break;
         }
     }
-
-    thread_pop_from_wait_queue(threads_pointer_list[tid]->wait, tid);
 
     if (already_in_ready_queue){
         interrupts_set(enabled);
