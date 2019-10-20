@@ -43,6 +43,7 @@ struct thread {
 
 bool threads_exist[THREAD_MAX_THREADS] = { false };
 struct thread * threads_pointer_list[THREAD_MAX_THREADS] = { NULL };
+struct wait_queue * threads_wait_list[THREAD_MAX_THREADS] = { NULL };
 struct thread * running = NULL;
 struct wait_queue * ready_head = NULL;
 
@@ -68,6 +69,9 @@ thread_init(void)
     err = getcontext(first_thread->context);
     assert(!err);
     ready_head = NULL;
+    for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        threads_wait_list[i] = wait_queue_create();
+    }
 
     interrupts_set(enabled);
 }
