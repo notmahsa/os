@@ -402,36 +402,25 @@ thread_exit()
     int enabled;
     enabled = interrupts_off();
     assert(!interrupts_enabled());
+    
+    running->state = 4;
+    threads_exist[running->id] = 0;
+    threads_pointer_list[running->id] = NULL;
+    thread_wakeup(threads_wait_list[running->id], 1);
+    free(running->context->uc_stack.ss_sp);
+    free(running->context);
+    free(running);
+    running = NULL;
 
-    if (running->id != 0 || ready_head){
-        running->state = 4;
-        threads_exist[running->id] = 0;
-        threads_pointer_list[running->id] = NULL;
-        thread_wakeup(threads_wait_list[running->id], 1);
-        free(running->context->uc_stack.ss_sp);
-        free(running->context);
-        free(running);
-        running = NULL;
-        if (ready_head){
-            struct thread * next_thread_to_run;
-            struct wait_queue * temp_head = ready_head->next;
-            next_thread_to_run = threads_pointer_list[ready_head->id];
-            free(ready_head);
-            ready_head = temp_head;
-            next_thread_to_run->state = 0;
-            running = next_thread_to_run;
-            setcontext(running->context);
-        }
-    }
-    else {
-        if(thread_yield(THREAD_ANY) < 0){
-            for (int i = 0; i < THREAD_MAX_THREADS; i++){
-                free(threads_wait_list[i]);
-            }
-
-            interrupts_set(enabled);
-            exit(0);
-        }
+    if (ready_head){
+        struct thread * next_thread_to_run;
+        struct wait_queue * temp_head = ready_head->next;
+        next_thread_to_run = threads_pointer_list[ready_head->id];
+        free(ready_head);
+        ready_head = temp_head;
+        next_thread_to_run->state = 0;
+        running = next_thread_to_run;
+        setcontext(running->context);
     }
 
     for (int i = 0; i < THREAD_MAX_THREADS; i++){
