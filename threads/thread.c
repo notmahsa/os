@@ -433,15 +433,21 @@ void clean_ready(){
         return;
     }
 
-    if (ready_head->next){
-        struct wait_queue * pop, * previous;
-        previous = ready_head;
-        for (pop = ready_head->next; pop != NULL; pop = pop->next){
-            if (threads_pointer_list[pop->id] == NULL){
-                previous->next = pop->next;
-                free(pop);
-            }
+    bool end = false;
+    struct wait_queue * pop = ready_head->next, * previous = ready_head;
+    
+    while (!end){
+        if (threads_pointer_list[pop->id] == NULL){
+            previous->next = pop->next;
+            free(pop);
+            pop = previous->next;
+        }
+        else{
             previous = pop;
+            pop = pop->next;
+        }
+        if (pop == NULL){
+            end = true;
         }
     }
 
@@ -635,7 +641,7 @@ thread_wakeup(struct wait_queue *queue, int all)
         free(queue->next);
         queue->next = new_head;
         thread_append_to_ready_queue(id);
-        // clean_ready();
+        clean_ready();
 
         interrupts_set(enabled);
         return 1;
@@ -651,7 +657,7 @@ thread_wakeup(struct wait_queue *queue, int all)
     if(ready_head == NULL) {
         ready_head = queue->next;
         queue->next = NULL;
-        // clean_ready();
+        clean_ready();
         interrupts_set(enabled);
         return counter;
     }
@@ -664,7 +670,7 @@ thread_wakeup(struct wait_queue *queue, int all)
     queue_iter->next = queue->next;
     queue->next = NULL;
 
-    // clean_ready();
+    clean_ready();
 
     interrupts_set(enabled);
     return counter;
