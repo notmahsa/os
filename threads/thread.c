@@ -424,6 +424,11 @@ thread_exit()
     }
 
     for (int i = 0; i < THREAD_MAX_THREADS; i++){
+        if (threads_pointer_list[i]){
+            free(threads_pointer_list[i]->context->uc_stack.ss_sp);
+            free(threads_pointer_list[i]->context);
+            free(threads_pointer_list[i]);
+        }
         free(threads_wait_list[i]);
     }
 
