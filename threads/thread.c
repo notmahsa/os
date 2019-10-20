@@ -201,25 +201,22 @@ thread_pop_from_ready_queue(Tid id){
         interrupts_set(enabled);
         return;
     }
-
-    if (ready_head->next){
-        struct wait_queue * pop, * previous;
-        previous = ready_head;
-        for (pop = ready_head->next; pop != NULL; pop = pop->next){
-            if (pop->id == id){
-                previous->next = pop->next;
-                free(pop);
-            }
-            previous = pop;
-        }
-    }
-
-    if (ready_head->id == id){
+    if (ready_head != NULL && ready_head->id == id){
         struct wait_queue * temp = ready_head->next;
         free(ready_head);
         ready_head = temp;
+        interrupts_set(enabled);
+        return;
     }
-
+    struct wait_queue * pop, * previous;
+    previous = ready_head;
+    for (pop = ready_head; pop != NULL; pop = pop->next){
+        if (pop->id == id){
+            previous->next = pop->next;
+            free(pop);
+        }
+        previous = pop;
+    }
     interrupts_set(enabled);
 }
 
@@ -241,6 +238,21 @@ thread_implicit_exit(Tid tid)
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
     thread_to_be_killed->state = 3;
+
+    bool already_in_ready_queue = false;
+    struct wait_queue * pop;
+    for(pop = ready_head; pop != NULL; pop = pop->next)
+    {
+        if(pop->id == tid){
+            already_in_ready_queue = true;
+            break;
+        }
+    }
+
+    if (already_in_ready_queue){
+        interrupts_set(enabled);
+        return tid;
+    }
 
     thread_append_to_ready_queue(thread_to_be_killed->id);
     interrupts_set(enabled);
@@ -456,11 +468,10 @@ thread_kill(Tid tid)
 	}
 
 	struct thread * thread_to_be_killed = threads_pointer_list[tid];
-	thread_wakeup(threads_wait_list[tid], 1);
+	thread_pop_from_ready_queue(thread_to_be_killed->id);
 
     thread_to_be_killed->state = 4;
     threads_exist[thread_to_be_killed->id] = false;
-    thread_pop_from_ready_queue(thread_to_be_killed->id);
     threads_pointer_list[thread_to_be_killed->id] = NULL;
     free(thread_to_be_killed->context->uc_stack.ss_sp);
     free(thread_to_be_killed->context);
