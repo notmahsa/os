@@ -403,7 +403,7 @@ thread_exit()
     enabled = interrupts_off();
     assert(!interrupts_enabled());
 
-    if (running->id != 0){
+    if (running->id != 0 || ready_head){
         running->state = 4;
         threads_exist[running->id] = 0;
         threads_pointer_list[running->id] = NULL;
