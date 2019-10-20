@@ -423,7 +423,6 @@ thread_exit()
     }
 
     for (int i = 0; i < THREAD_MAX_THREADS; i++){
-        // wait_queue_destroy(threads_wait_list[i]);
         free(threads_wait_list[i]);
     }
 
