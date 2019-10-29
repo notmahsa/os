@@ -95,7 +95,7 @@ request_stub(void * sv_void){
             sv->buff_low++;
         }
 
-        pthread_cond_signal(sv->empty);
+        pthread_cond_signal(sv->full);
 
         pthread_mutex_unlock(sv->lock);
         do_server_request(sv, connfd);
@@ -132,7 +132,10 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
         sv->buff_high = 0;
 
 		if (max_requests > 0){
-		    sv->request_buff = malloc(max_requests * sizeof(int));
+		    sv->request_buff = malloc((max_requests + 1) * sizeof(int));
+		    for (int i = 0; i <= max_requests; i++){
+		        sv->request_buff[i] = 0;
+		    }
 		}
 
 		if (nr_threads > 0){
@@ -164,7 +167,7 @@ server_request(struct server *sv, int connfd)
 
 		pthread_mutex_lock(sv->lock);
         if ((sv->buff_high - sv->buff_low + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
-            pthread_cond_wait(sv->empty, sv->lock);
+            pthread_cond_wait(sv->full, sv->lock);
         }
 
         sv->request_buff[sv->buff_high] = connfd;
