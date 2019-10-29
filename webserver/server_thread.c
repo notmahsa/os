@@ -139,7 +139,7 @@ request_stub(void * sv_void){
 
     while(1){
         if (sv->exiting){
-            break
+            break;
         }
 
         pthread_mutex_lock(sv->lock);
@@ -157,7 +157,6 @@ request_stub(void * sv_void){
         pthread_mutex_unlock(sv->lock);
         do_server_request(sv, connfd);
     }
-    server_exit(sv);
 }
 
 void
@@ -180,9 +179,6 @@ server_request(struct server *sv, int connfd)
 
         pthread_cond_signal(sv->empty);
         pthread_mutex_unlock(sv->lock);
-        if (sv->exiting){
-            server_exit(sv);
-        }
 	}
 }
 
