@@ -116,15 +116,15 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	int err;
 
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
-	    sv->lock = malloc(sizeof(pthread_mutex_t));
+	    sv->lock = Malloc(sizeof(pthread_mutex_t));
 	    err = pthread_mutex_init(sv->lock, NULL);
 	    assert(err == 0);
 
-	    sv->full = malloc(sizeof(pthread_cond_t));
+	    sv->full = Malloc(sizeof(pthread_cond_t));
 	    err = pthread_cond_init(sv->full, NULL);
 	    assert(err == 0);
 
-	    sv->empty = malloc(sizeof(pthread_cond_t));
+	    sv->empty = Malloc(sizeof(pthread_cond_t));
         err = pthread_cond_init(sv->empty, NULL);
         assert(err == 0);
 
@@ -132,14 +132,14 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
         sv->buff_high = 0;
 
 		if (max_requests > 0){
-		    sv->request_buff = malloc((max_requests + 1) * sizeof(int));
+		    sv->request_buff = Malloc((max_requests + 1) * sizeof(int));
 		    for (int i = 0; i <= max_requests; i++){
 		        sv->request_buff[i] = 0;
 		    }
 		}
 
 		if (nr_threads > 0){
-		    sv->worker_threads = malloc(nr_threads * sizeof(pthread_t *));
+		    sv->worker_threads = Malloc(nr_threads * sizeof(pthread_t *));
 		    for (int i = 0; i < nr_threads; i++){
             	err = pthread_create(sv->worker_threads[i], NULL, (void *)&request_stub, sv);
             	assert(err == 0);
@@ -191,6 +191,15 @@ server_exit(struct server *sv)
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
 	sv->exiting = 1;
+	for (int i = 0; i < nr_threads; i++){
+        free(sv->worker_threads[i]);
+    }
+    free(sv->request_buff);
+    free(sv->worker_threads);
+    free(sv->empty);
+    free(sv->full);
+    free(sv->lock);
+    
 
 	/* make sure to free any allocated resources */
 	free(sv);
