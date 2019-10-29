@@ -9,11 +9,11 @@ struct server {
 	int max_cache_size;
 	int exiting;
 	/* add any other parameters you need */
-	pthread_t ** worker_threads;
-	int * req_queue;
-	pthread_mutex_t * lock;
-    pthread_cond_t * cv;
-
+	pthread_t main_thread;
+        int[] *request_q;
+	pthread_t[] *workers;
+	pthread_mutex_t *mutex;
+	pthread_cond_t *cond;
 };
 
 /* static functions */
@@ -55,7 +55,7 @@ do_server_request(struct server *sv, int connfd)
 		file_data_free(data);
 		return;
 	}
-	/* read file, 
+	/* read file,
 	 * fills data->file_buf with the file contents,
 	 * data->file_size with file size. */
 	ret = request_readfile(rq);
@@ -81,29 +81,27 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->max_requests = max_requests;
 	sv->max_cache_size = max_cache_size;
 	sv->exiting = 0;
+	sv->main_thread = pthread_self();
 
-	int err;
-	
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
-	    sv->lock = malloc(sizeof(pthread_mutex_t));
-	    err = pthread_mutex_init(sv->lock, NULL);
-	    assert(err == 0);
-
-	    sv->cv = malloc(sizeof(pthread_cond_t));
-	    err = pthread_cond_init(sv->cv, NULL);
-	    assert(err == 0);
-
-		if (max_requests > 0){
-		    sv->req_queue = malloc(max_requests * sizeof(int));
+		if(nr_threads > 0)
+		{
+			sv->workers = Malloc(sizeof(pthread_t * nr_threads));
+			sv->request_q = Malloc(sizeof(int*max_requests));
+			for(int i = 0; i < nr_threads;i++)
+			{
+                        	err = pthread_create(sv->workers[i], NULL, &server_request, sv);
+				if(err != 0)
+				{
+					printf("Could not create thread\n");
+				}
+			}
+			sv->mutex = Malloc(sizeof(pthread_mutex_t));
+			sv->cond = Malloc(sizeof(pthread_cond_t));
+			pthread_mutex_init(sv->mutex, NULL);
+			pthread_cond_init(sv->cond, NULL);
 		}
-
-		if (nr_threads > 0){
-		    sv->worker_threads = malloc(nr_threads * sizeof(pthread_t *));
-		    for (int i = 0; i < nr_threads; i++){
-            	err = pthread_create(sv->worker_threads[i], NULL, &server_request, sv);
-            	assert(err == 0);
-            }
-		}
+		sv->request_q = NULL;
 	}
 
 	/* Lab 4: create queue of max_request size when max_requests > 0 */
@@ -118,12 +116,30 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 void
 server_request(struct server *sv, int connfd)
 {
-	if (sv->nr_threads == 0) { /* no worker threads */
-		do_server_request(sv, connfd);
-	} else {
-		/*  Save the relevant info in a buffer and have one of the
-		 *  worker threads do the work. */
-		TBD();
+	if(pthread_equal(sv->main_thread, pthread_self()))
+	{
+		if (sv->nr_threads == 0) { /* no worker threads */
+			do_server_request(sv, connfd);
+		} else {
+			/*  Save the relevant info in a buffer and have one of the
+		 	*  worker threads do the work. */
+			pthread_mutex_lock(sv->mutex);
+
+			//mutex unlock
+			//signal
+		}
+	}
+	else
+	{
+restart:
+		pthread_mutex_lock();
+		while(sv->request_q == NULL)
+            		pthread_cond_wait(sv->cond, NULL);
+		//update request buffer
+    		pthread_mutex_unlock();
+		//process request
+		//
+		goto restart;
 	}
 }
 
