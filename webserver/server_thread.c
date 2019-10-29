@@ -163,18 +163,18 @@ server_request(struct server *sv, int connfd)
 	} else {
 		/*  Save the relevant info in a buffer and have one of the
 		 *  worker threads do the work. */
-		 
+
 		pthread_mutex_lock(sv->lock);
         if ((sv->buff_high - sv->buff_low + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
-            pthread_cond_wait(sv->no_threads,sv->lock);
+            pthread_cond_wait(sv->empty, sv->lock);
         }
 
         sv->req_queue[sv->buff_high] = connfd;
 
         if (sv->buff_high == sv->max_requests - 1){
-            sv->index_high = 0;
+            sv->buff_high = 0;
         } else{
-            sv->index_high++;
+            sv->buff_high++;
         }
 
         pthread_cond_signal(sv->empty);
