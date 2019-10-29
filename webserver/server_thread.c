@@ -12,9 +12,15 @@ struct server {
 	pthread_t ** worker_threads;
 	int * req_queue;
 	pthread_mutex_t * lock;
-    pthread_cond_t * cv;
+    pthread_cond_t * full;
+    pthread_cond_t * empty;
+
+    int buff_low;
+    int buff_high;
 
 };
+
+void request_stub(void *sv);
 
 /* static functions */
 
@@ -89,9 +95,16 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	    err = pthread_mutex_init(sv->lock, NULL);
 	    assert(err == 0);
 
-	    sv->cv = malloc(sizeof(pthread_cond_t));
-	    err = pthread_cond_init(sv->cv, NULL);
+	    sv->full = malloc(sizeof(pthread_cond_t));
+	    err = pthread_cond_init(sv->full, NULL);
 	    assert(err == 0);
+
+	    sv->empty = malloc(sizeof(pthread_cond_t));
+        err = pthread_cond_init(sv->empty, NULL);
+        assert(err == 0);
+
+        sv->buff_low = 0;
+        sv_buff_high = 0;
 
 		if (max_requests > 0){
 		    sv->req_queue = malloc(max_requests * sizeof(int));
@@ -100,7 +113,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 		if (nr_threads > 0){
 		    sv->worker_threads = malloc(nr_threads * sizeof(pthread_t *));
 		    for (int i = 0; i < nr_threads; i++){
-            	err = pthread_create(sv->worker_threads[i], NULL, &server_request, sv);
+            	err = pthread_create(sv->worker_threads[i], NULL, &request_stub, sv);
             	assert(err == 0);
             }
 		}
@@ -116,6 +129,33 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 }
 
 void
+request_stub(void * sv_void){
+    int connfd = 0;
+    struct server * sv = (struct server *)sv_void;
+
+    while(1){
+        pthread_mutex_lock(sv->lock);
+
+        while((sv->buff_high - sv->buff_low + sv->max_requests) % sv->max_requests == 0){
+            pthread_cond_wait(sv->empty, sv->lock);
+        }
+
+        connfd = sv->req_queue[sv->buff_low];
+        sv->req_queue[sv->buff_low] = 0;
+        if (sv->buff_low == sv->max_requests - 1){
+            sv->buff_low = 0;
+        } else {
+            sv->buff_low++;
+        }
+
+        pthread_cond_signal(sv->empty);
+
+        pthread_mutex_unlock(sv->lock);
+        do_server_request(sv, connfd);
+    }
+}
+
+void
 server_request(struct server *sv, int connfd)
 {
 	if (sv->nr_threads == 0) { /* no worker threads */
@@ -123,7 +163,22 @@ server_request(struct server *sv, int connfd)
 	} else {
 		/*  Save the relevant info in a buffer and have one of the
 		 *  worker threads do the work. */
-		TBD();
+		 
+		pthread_mutex_lock(sv->lock);
+        if ((sv->buff_high - sv->buff_low + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
+            pthread_cond_wait(sv->no_threads,sv->lock);
+        }
+
+        sv->req_queue[sv->buff_high] = connfd;
+
+        if (sv->buff_high == sv->max_requests - 1){
+            sv->index_high = 0;
+        } else{
+            sv->index_high++;
+        }
+
+        pthread_cond_signal(sv->empty);
+        pthread_mutex_unlock(sv->lock);
 	}
 }
 
