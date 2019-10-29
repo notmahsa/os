@@ -10,7 +10,7 @@ struct server {
 	int exiting;
 	/* add any other parameters you need */
 	pthread_t ** worker_threads;
-	int * req_queue;
+	int * request_buff;
 	pthread_mutex_t * lock;
     pthread_cond_t * full;
     pthread_cond_t * empty;
@@ -19,8 +19,6 @@ struct server {
     int buff_high;
 
 };
-
-void request_stub(void *sv);
 
 /* static functions */
 
@@ -77,6 +75,33 @@ out:
 
 /* entry point functions */
 
+void
+request_stub(void * sv_void){
+    int connfd = 0;
+    struct server * sv = (struct server *)sv_void;
+
+    while(1){
+        pthread_mutex_lock(sv->lock);
+
+        while((sv->buff_high - sv->buff_low + sv->max_requests) % sv->max_requests == 0){
+            pthread_cond_wait(sv->empty, sv->lock);
+        }
+
+        connfd = sv->request_buff[sv->buff_low];
+        sv->request_buff[sv->buff_low] = 0;
+        if (sv->buff_low == sv->max_requests - 1){
+            sv->buff_low = 0;
+        } else {
+            sv->buff_low++;
+        }
+
+        pthread_cond_signal(sv->empty);
+
+        pthread_mutex_unlock(sv->lock);
+        do_server_request(sv, connfd);
+    }
+}
+
 struct server *
 server_init(int nr_threads, int max_requests, int max_cache_size)
 {
@@ -107,7 +132,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
         sv->buff_high = 0;
 
 		if (max_requests > 0){
-		    sv->req_queue = malloc(max_requests * sizeof(int));
+		    sv->request_buff = malloc(max_requests * sizeof(int));
 		}
 
 		if (nr_threads > 0){
@@ -129,33 +154,6 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 }
 
 void
-request_stub(void * sv_void){
-    int connfd = 0;
-    struct server * sv = (struct server *)sv_void;
-
-    while(1){
-        pthread_mutex_lock(sv->lock);
-
-        while((sv->buff_high - sv->buff_low + sv->max_requests) % sv->max_requests == 0){
-            pthread_cond_wait(sv->empty, sv->lock);
-        }
-
-        connfd = sv->req_queue[sv->buff_low];
-        sv->req_queue[sv->buff_low] = 0;
-        if (sv->buff_low == sv->max_requests - 1){
-            sv->buff_low = 0;
-        } else {
-            sv->buff_low++;
-        }
-
-        pthread_cond_signal(sv->empty);
-
-        pthread_mutex_unlock(sv->lock);
-        do_server_request(sv, connfd);
-    }
-}
-
-void
 server_request(struct server *sv, int connfd)
 {
 	if (sv->nr_threads == 0) { /* no worker threads */
@@ -169,7 +167,7 @@ server_request(struct server *sv, int connfd)
             pthread_cond_wait(sv->empty, sv->lock);
         }
 
-        sv->req_queue[sv->buff_high] = connfd;
+        sv->request_buff[sv->buff_high] = connfd;
 
         if (sv->buff_high == sv->max_requests - 1){
             sv->buff_high = 0;
