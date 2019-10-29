@@ -9,7 +9,7 @@ struct server {
 	int max_cache_size;
 	int exiting;
 	/* add any other parameters you need */
-	pthread_t ** worker_threads;
+	pthread_t * worker_threads;
 	int * req_queue;
 
 };
@@ -87,9 +87,9 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 		    sv->req_queue = malloc(max_requests * sizeof(int));
 		}
 		if (nr_threads > 0){
-		    sv->worker_threads = malloc(nr_threads * sizeof(pthread_t *));
+		    sv->worker_threads = malloc(nr_threads * sizeof(pthread_t));
 		    for (int i = 0; i < nr_threads; i++){
-            	err = pthread_create(sv->worker_threads[i], NULL, &server_request, sv);
+            	err = pthread_create(&sv->worker_threads[i], NULL, server_request, sv);
             	assert(err == 0);
             }
 		}
