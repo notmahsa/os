@@ -104,7 +104,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
         assert(err == 0);
 
         sv->buff_low = 0;
-        sv_buff_high = 0;
+        sv->buff_high = 0;
 
 		if (max_requests > 0){
 		    sv->req_queue = malloc(max_requests * sizeof(int));
