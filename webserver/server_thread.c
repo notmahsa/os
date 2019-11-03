@@ -185,14 +185,14 @@ server_exit(struct server *sv)
 	 * these threads that the server is exiting. make sure to call
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
-	sv->exiting = 1;
+	// sv->exiting = 1;
 	for (int i = 0; i < sv->nr_threads; i++){
         free(sv->worker_threads[i]);
     }
-    free(sv->request_buff);
+    free(sv->request_buffer);
     free(sv->worker_threads);
-    free(sv->empty);
-    free(sv->full);
+    free(sv->no_requests);
+    free(sv->no_threads);
     free(sv->lock);
 	/* make sure to free any allocated resources */
 	free(sv);
