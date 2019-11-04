@@ -192,7 +192,7 @@ server_exit(struct server *sv)
 	pthread_cond_broadcast(sv->full);
 
 	for (int i = 0; i < sv->nr_threads; i++){
-	    pthread_join(sv->worker_threads[i], NULL);
+	    pthread_join(*(sv->worker_threads[i]), NULL);
 	}
 
 	for (int i = 0; i < sv->nr_threads; i++){
