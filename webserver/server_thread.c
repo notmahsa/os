@@ -246,8 +246,6 @@ struct server {
 
 };
 
-void
-request_stub(void * sv_void);
 /* static functions */
 
 /* initialize file data */
