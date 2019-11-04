@@ -88,6 +88,8 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->max_cache_size = max_cache_size;
 	sv->exiting = 0;
 
+    int err;
+    
     sv->lock = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
     err = pthread_mutex_init(sv->lock, NULL);
     assert(err == 0);
@@ -102,8 +104,6 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 
     sv->buff_in = 0;
     sv->buff_out = 0;
-
-	int err;
 
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
 	    if (nr_threads > 0){
