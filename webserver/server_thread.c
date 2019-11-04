@@ -315,7 +315,7 @@ void start_routine(struct server *sv) {
             }
         }
 
-        int msg = sv->request_buffer[sv->buff_out];
+        int msg = sv->request_buff[sv->buff_out];
 
         pthread_cond_signal(&sv->full);
 
@@ -364,7 +364,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     {
         if(max_requests > 0)
         {
-            sv->request_buffer = (int *)malloc( (max_requests + 1) * sizeof(int));
+            sv->request_buff = (int *)malloc( (max_requests + 1) * sizeof(int));
         }
 
         if(nr_threads > 0)
@@ -399,7 +399,7 @@ void server_request(struct server *sv, int connfd)
             pthread_cond_wait(&sv->full, &sv->lock);
         }
 
-        sv->request_buffer[sv->buff_in] = connfd;
+        sv->request_buff[sv->buff_in] = connfd;
         pthread_cond_signal(&sv->empty);
 
         sv->buff_in = (sv->buff_in + 1)%(sv->max_requests + 1);
@@ -424,7 +424,7 @@ void server_exit(struct server *sv)
         pthread_join(sv->worker_threads[i], NULL);
     }
 
-    free(sv->request_buffer);
+    free(sv->request_buff);
     free(sv->worker_threads);
     pthread_mutex_destroy(&sv->lock);
     pthread_cond_destroy(&sv->empty);
