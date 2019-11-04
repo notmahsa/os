@@ -342,9 +342,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     sv->max_cache_size = max_cache_size;
     sv->exiting = 0;
 
-    sv->request_buffer = NULL;
-    sv->worker_threads = NULL;
-
+    int err;
     err = pthread_mutex_init(&sv->lock, NULL);
     assert(err == 0);
 
