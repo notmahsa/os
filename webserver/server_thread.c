@@ -19,6 +19,7 @@ struct server {
         //used to synchronize request handling
         pthread_cond_t *no_requests;
         pthread_cond_t *no_threads;
+        int exiting;
 	/* add any other parameters you need */
 };
 
