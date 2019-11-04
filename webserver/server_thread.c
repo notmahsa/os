@@ -141,7 +141,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     {
         if(max_requests > 0)
         {
-            sv->buffer = (int )malloc( (max_requests + 1) sizeof(int));
+            sv->buffer = (int *)malloc( (max_requests + 1) * sizeof(int));
         }
 
         if(nr_threads > 0)
