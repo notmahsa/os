@@ -238,8 +238,8 @@ struct server {
     int * buffer;
     pthread_t * worker_threads;
     pthread_mutex_t * lock;
-    pthread_cond_t * empty;
-    pthread_cond_t * full;
+    pthread_cond_t empty;
+    pthread_cond_t full;
     int buffer_in;
     int buffer_out;
 
