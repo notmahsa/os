@@ -228,20 +228,21 @@
 #include "common.h"
 #include <pthread.h>
 
-
 struct server {
-    int nr_threads;
-    int max_requests;
-    int max_cache_size;
-    int exiting;
+	int nr_threads;
+	int max_requests;
+	int max_cache_size;
+	int exiting;
+	/* add any other parameters you need */
 
-    int * request_buffer;
-    pthread_t * worker_threads;
-    pthread_mutex_t lock;
-    pthread_cond_t empty;
+	pthread_t * worker_threads;
+	int * request_buff;
+	pthread_mutex_t lock;
     pthread_cond_t full;
-    int buffer_in;
-    int buffer_out;
+    pthread_cond_t empty;
+
+    int buff_in;
+    int buff_out;
 
 };
 
