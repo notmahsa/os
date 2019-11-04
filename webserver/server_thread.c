@@ -130,9 +130,9 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 
 void
 request_stub(void * sv_void){
+    struct server * sv = (struct server *)sv_void;
     while (sv->exiting == 0) {
         pthread_mutex_lock(sv->lock);
-        struct server * sv = (struct server *)sv_void;
 
         while(sv->buff_in == sv->buff_out){
             pthread_cond_wait(sv->empty, sv->lock);
