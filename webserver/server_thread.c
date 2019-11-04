@@ -240,8 +240,8 @@ struct server {
     pthread_mutex_t * lock;
     pthread_cond_t * empty;
     pthread_cond_t * full;
-    int buffer_in = 0;
-    int buffer_out = 0;
+    int buffer_in;
+    int buffer_out;
 
 };
 
@@ -308,7 +308,7 @@ void request_stub(struct server *sv) {
     while(sv->exiting == 0)
     {
         pthread_mutex_lock(sv->lock);
-        while(buffer_in == buffer_out)
+        while(sv->buffer_in == sv->buffer_out)
         {
             pthread_cond_wait(sv->empty, sv->lock);
             if (sv->exiting == 1)
@@ -318,11 +318,11 @@ void request_stub(struct server *sv) {
             }
         }
 
-        int msg = sv->buffer[buffer_out];
+        int msg = sv->buffer[sv->buffer_out];
 
         pthread_cond_signal(sv->full);
 
-        buffer_out = (buffer_out + 1)%sv->max_requests;
+        sv->buffer_out = (sv->buffer_out + 1)%sv->max_requests;
         pthread_mutex_unlock(sv->lock);
 
         if (sv->exiting == 1)
@@ -351,6 +351,9 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     pthread_mutex_init(sv->lock, NULL);
     pthread_cond_init(sv->empty, NULL);
     pthread_cond_init(sv->full, NULL);
+
+    sv->buffer_in = 0;
+    sv->buff_out = 0;
 
     /* Lab 4: create queue of max_request size when max_requests > 0 */
     /* Lab 5: init server cache and limit its size to max_cache_size */
@@ -390,15 +393,15 @@ void server_request(struct server *sv, int connfd)
         *  worker threads do the work. */
         pthread_mutex_lock(sv->lock);
 
-        while((buffer_in - buffer_out+sv->max_requests)%sv->max_requests == sv->max_requests-1)
+        while((sv->buffer_in - sv->buffer_out+sv->max_requests)%sv->max_requests == sv->max_requests-1)
         {
             pthread_cond_wait(sv->full, sv->lock);
         }
 
-        sv->buffer[buffer_in] = connfd;
+        sv->buffer[sv->buffer_in] = connfd;
         pthread_cond_signal(sv->empty);
 
-        buffer_in = (buffer_in + 1)%sv->max_requests;
+        sv->buffer_in = (sv->buffer_in + 1)%sv->max_requests;
         pthread_mutex_unlock(sv->lock);
     }
 }
