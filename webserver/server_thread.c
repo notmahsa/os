@@ -88,38 +88,35 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->max_cache_size = max_cache_size;
 	sv->exiting = 0;
 
+    sv->lock = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
+    err = pthread_mutex_init(sv->lock, NULL);
+    assert(err == 0);
+
+    sv->full = (pthread_cond_t *)Malloc(sizeof(pthread_cond_t));
+    err = pthread_cond_init(sv->full, NULL);
+    assert(err == 0);
+
+    sv->empty = (pthread_cond_t *)Malloc(sizeof(pthread_cond_t));
+    err = pthread_cond_init(sv->empty, NULL);
+    assert(err == 0);
+
+    sv->buff_in = 0;
+    sv->buff_out = 0;
+
 	int err;
 
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
-	    sv->lock = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
-	    err = pthread_mutex_init(sv->lock, NULL);
-	    assert(err == 0);
-
-	    sv->full = (pthread_cond_t *)Malloc(sizeof(pthread_cond_t));
-	    err = pthread_cond_init(sv->full, NULL);
-	    assert(err == 0);
-
-	    sv->empty = (pthread_cond_t *)Malloc(sizeof(pthread_cond_t));
-        err = pthread_cond_init(sv->empty, NULL);
-        assert(err == 0);
-
-        sv->buff_in = 0;
-        sv->buff_out = 0;
+	    if (nr_threads > 0){
+            sv->worker_threads = (pthread_t **)Malloc(nr_threads * sizeof(pthread_t *));
+            for (int i = 0; i < nr_threads; i++){
+                sv->worker_threads[i] = (pthread_t *)Malloc(sizeof(pthread_t));
+                err = pthread_create(sv->worker_threads[i], NULL, (void *)&request_stub, (void *)sv);
+                assert(err == 0);
+            }
+        }
 
 		if (max_requests > 0){
 		    sv->request_buff = (int *)Malloc((max_requests) * sizeof(int));
-		    for (int i = 0; i < max_requests; i++){
-		        sv->request_buff[i] = 0;
-		    }
-		}
-
-		if (nr_threads > 0){
-		    sv->worker_threads = (pthread_t **)Malloc(nr_threads * sizeof(pthread_t *));
-		    for (int i = 0; i < nr_threads; i++){
-		        sv->worker_threads[i] = (pthread_t *)Malloc(sizeof(pthread_t));
-            	err = pthread_create(sv->worker_threads[i], NULL, (void *)&request_stub, (void *)sv);
-            	assert(err == 0);
-            }
 		}
 	}
 
@@ -135,7 +132,8 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 void
 request_stub(void * sv_void){
     int connfd = 0;
-    struct server * sv = (struct server *)sv_void;
+    struct server * sv;
+     sv = (struct server *)sv_void;
 
     while(1){
         if (sv->exiting){
@@ -144,7 +142,7 @@ request_stub(void * sv_void){
 
         pthread_mutex_lock(sv->lock);
 
-        while(sv->buff_in == sv->buff_out){
+        while((sv->buff_in - sv->buff_out + sv->max_requests) % sv->max_requests == 0){
             pthread_cond_wait(sv->empty, sv->lock);
         }
 
@@ -162,7 +160,7 @@ request_stub(void * sv_void){
 void
 server_request(struct server *sv, int connfd)
 {
-	if (sv->nr_threads == 0) { /* no worker threads */
+	if (sv->nr_threads == 0) {
 		do_server_request(sv, connfd);
 	} else {
 		/*  Save the relevant info in a buffer and have one of the
@@ -190,14 +188,26 @@ server_exit(struct server *sv)
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
 	sv->exiting = 1;
+
+	pthread_cond_broadcast(sv->full);
+
+	for (int i = 0; i < sv->nr_threads; i++){
+	    pthread_join(sv->worker_threads[i], NULL);
+	}
+
 	for (int i = 0; i < sv->nr_threads; i++){
         free(sv->worker_threads[i]);
     }
+
+    pthread_cond_destroy(sv->empty);
+    pthread_cond_destroy(sv->full);
+    pthread_mutex_destroy(sv->lock);
+
     free(sv->request_buff);
     free(sv->worker_threads);
-    free(sv->empty);
-    free(sv->full);
-    free(sv->lock);
+//    free(sv->empty);
+//    free(sv->full);
+//    free(sv->lock);
 	/* make sure to free any allocated resources */
 	free(sv);
 }
