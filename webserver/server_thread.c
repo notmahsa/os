@@ -237,71 +237,73 @@ struct server {
 
     int * buffer;
     pthread_t * worker_threads;
-    pthread_mutex_t lock;
-    pthread_cond_t empty;
-    pthread_cond_t full;
+    pthread_mutex_t * lock;
+    pthread_cond_t * empty;
+    pthread_cond_t * full;
+    int buffer_in = 0;
+    int buffer_out = 0;
 
 };
 
 //initially empty
-int buffer_in = 0;
-int buffer_out = 0;
 
+void
+request_stub(void * sv_void);
 /* static functions */
 
 /* initialize file data */
 static struct file_data *
 file_data_init(void)
 {
-    struct file_data *data;
+	struct file_data *data;
 
-    data = Malloc(sizeof(struct file_data));
-    data->file_name = NULL;
-    data->file_buf = NULL;
-    data->file_size = 0;
-    return data;
+	data = Malloc(sizeof(struct file_data));
+	data->file_name = NULL;
+	data->file_buf = NULL;
+	data->file_size = 0;
+	return data;
 }
 
 /* free all file data */
 static void
 file_data_free(struct file_data *data)
 {
-    free(data->file_name);
-    free(data->file_buf);
-    free(data);
+	free(data->file_name);
+	free(data->file_buf);
+	free(data);
 }
 
 static void
 do_server_request(struct server *sv, int connfd)
 {
-    int ret;
-    struct request *rq;
-    struct file_data *data;
+	int ret;
+	struct request *rq;
+	struct file_data *data;
 
-    data = file_data_init();
+	data = file_data_init();
 
-    /* fill data->file_name with name of the file being requested */
-    rq = request_init(connfd, data);
-    if (!rq) {
-    file_data_free(data);
-    return;
-    }
-    /* read file,
-    * fills data->file_buf with the file contents,
-    * data->file_size with file size. */
-    ret = request_readfile(rq);
-    if (ret == 0) { /* couldn't read file */
-    goto out;
-    }
-    /* send file to client */
-    request_sendfile(rq);
-    out:
-    request_destroy(rq);
-    file_data_free(data);
+	/* fill data->file_name with name of the file being requested */
+	rq = request_init(connfd, data);
+	if (!rq) {
+		file_data_free(data);
+		return;
+	}
+	/* read file,
+	 * fills data->file_buf with the file contents,
+	 * data->file_size with file size. */
+	ret = request_readfile(rq);
+	if (ret == 0) { /* couldn't read file */
+		goto out;
+	}
+	/* send file to client */
+	request_sendfile(rq);
+out:
+	request_destroy(rq);
+	file_data_free(data);
 }
 
 /* helper functions */
-void start_routine(struct server *sv) {
+void request_stub(struct server *sv) {
 
     while(sv->exiting == 0)
     {
@@ -367,7 +369,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
 
             for (int i = 0; i < nr_threads; i++)
             {
-                pthread_create(&sv->worker_threads[i], NULL, (void *)*start_routine, sv);
+                pthread_create(&sv->worker_threads[i], NULL, (void *)*request_stub, sv);
             }
         }
 
