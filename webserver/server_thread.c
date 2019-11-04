@@ -235,7 +235,7 @@ struct server {
     int max_cache_size;
     int exiting;
 
-    int * buffer;
+    int * request_buffer;
     pthread_t * worker_threads;
     pthread_mutex_t lock;
     pthread_cond_t empty;
@@ -314,7 +314,7 @@ void start_routine(struct server *sv) {
             }
         }
 
-        int msg = sv->buffer[sv->buffer_out];
+        int msg = sv->request_buffer[sv->buffer_out];
 
         pthread_cond_signal(&sv->full);
 
@@ -342,7 +342,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     sv->max_cache_size = max_cache_size;
     sv->exiting = 0;
 
-    sv->buffer = NULL;
+    sv->request_buffer = NULL;
     sv->worker_threads = NULL;
     pthread_mutex_init(&sv->lock, NULL);
     pthread_cond_init(&sv->empty, NULL);
@@ -359,7 +359,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     {
         if(max_requests > 0)
         {
-            sv->buffer = (int *)malloc( (max_requests + 1) * sizeof(int));
+            sv->request_buffer = (int *)malloc( (max_requests + 1) * sizeof(int));
         }
 
         if(nr_threads > 0)
@@ -394,7 +394,7 @@ void server_request(struct server *sv, int connfd)
             pthread_cond_wait(&sv->full, &sv->lock);
         }
 
-        sv->buffer[sv->buffer_in] = connfd;
+        sv->request_buffer[sv->buffer_in] = connfd;
         pthread_cond_signal(&sv->empty);
 
         sv->buffer_in = (sv->buffer_in + 1)%(sv->max_requests + 1);
@@ -419,7 +419,7 @@ void server_exit(struct server *sv)
         pthread_join(sv->worker_threads[i], NULL);
     }
 
-    free(sv->buffer);
+    free(sv->request_buffer);
     free(sv->worker_threads);
     pthread_mutex_destroy(&sv->lock);
     pthread_cond_destroy(&sv->empty);
