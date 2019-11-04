@@ -245,10 +245,6 @@ struct server {
 
 };
 
-//initially empty
-
-void
-request_stub(void * sv_void);
 /* static functions */
 
 /* initialize file data */
@@ -353,7 +349,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     pthread_cond_init(sv->full, NULL);
 
     sv->buffer_in = 0;
-    sv->buff_out = 0;
+    sv->buffer_out = 0;
 
     /* Lab 4: create queue of max_request size when max_requests > 0 */
     /* Lab 5: init server cache and limit its size to max_cache_size */
