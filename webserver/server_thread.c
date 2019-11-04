@@ -85,7 +85,7 @@ request_stub(void * sv_void){
         while(sv->buff_in == sv->buff_out){
             pthread_cond_wait(sv->empty, sv->lock);
             if (sv->exiting == 1){
-                pthread_mutex_unlock(&sv->lock);
+                pthread_mutex_unlock(sv->lock);
                 return;
             }
         }
@@ -136,7 +136,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
             sv->worker_threads = (pthread_t **)Malloc(nr_threads * sizeof(pthread_t *));
             for (int i = 0; i < nr_threads; i++){
                 sv->worker_threads[i] = (pthread_t *)Malloc(sizeof(pthread_t));
-                err = pthread_create(sv->worker_threads[i], NULL, (void *)&request_stub, (void *)sv);
+                err = pthread_create(sv->worker_threads[i], NULL, (void *)*request_stub, (void *)sv);
                 assert(err == 0);
             }
         }
