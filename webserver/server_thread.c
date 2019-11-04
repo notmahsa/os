@@ -161,8 +161,8 @@ server_request(struct server *sv, int connfd)
 		 *  worker threads do the work. */
 		pthread_mutex_lock(sv->lock);
 		if (sv->exiting == 1) {
-            pthread_cond_broadcast(sv->empty);
             pthread_mutex_unlock(sv->lock);
+            return;
         }
         if ((sv->buff_in - sv->buff_out + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
             pthread_cond_wait(sv->full, sv->lock);
