@@ -172,10 +172,10 @@ void server_request(struct server *sv, int connfd)
 
 void server_exit(struct server *sv)
 {
-/* when using one or more worker threads, use sv->exiting to indicate to
-* these threads that the server is exiting. make sure to call
-* pthread_join in this function so that the main server thread waits
-* for all the worker threads to exit before exiting. */
+    /* when using one or more worker threads, use sv->exiting to indicate to
+    * these threads that the server is exiting. make sure to call
+    * pthread_join in this function so that the main server thread waits
+    * for all the worker threads to exit before exiting. */
 
     pthread_mutex_lock(&sv->lock);
     sv->exiting = 1;
