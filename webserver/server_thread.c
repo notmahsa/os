@@ -348,16 +348,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     sv->buff_in = 0;
     sv->buff_out = 0;
 
-    /* Lab 4: create queue of max_request size when max_requests > 0 */
-    /* Lab 5: init server cache and limit its size to max_cache_size */
-    /* Lab 4: create worker threads when nr_threads > 0 */
-
-    if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0)
-    {
-        if (max_requests > 0){
-            sv->request_buff = (int *)malloc(sv->max_requests * sizeof(int));
-        }
-
+    if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0){
         if (nr_threads > 0){
             sv->worker_threads = (pthread_t *)malloc(nr_threads * sizeof(pthread_t));
 
@@ -365,8 +356,17 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
                 pthread_create(&sv->worker_threads[i], NULL, (void *)&request_stub, (void *)sv);
             }
         }
-
+        if (max_requests > 0){
+            sv->request_buff = (int *)malloc(sv->max_requests * sizeof(int));
+        }
     }
+
+    /* Lab 4: create queue of max_request size when max_requests > 0 */
+
+    /* Lab 5: init server cache and limit its size to max_cache_size */
+
+    /* Lab 4: create worker threads when nr_threads > 0 */
+
     return sv;
 }
 
