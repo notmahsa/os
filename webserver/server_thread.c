@@ -305,7 +305,7 @@ void start_routine(struct server *sv) {
     while(sv->exiting == 0)
     {
         pthread_mutex_lock(&sv->lock);
-        while(sv->buffer_in == sv->buffer_out)
+        while(sv->buff_in == sv->buff_out)
         {
             pthread_cond_wait(&sv->empty, &sv->lock);
             if (sv->exiting == 1)
@@ -315,11 +315,11 @@ void start_routine(struct server *sv) {
             }
         }
 
-        int msg = sv->request_buffer[sv->buffer_out];
+        int msg = sv->request_buffer[sv->buff_out];
 
         pthread_cond_signal(&sv->full);
 
-        sv->buffer_out = (sv->buffer_out + 1)%(sv->max_requests + 1);
+        sv->buff_out = (sv->buff_out + 1)%(sv->max_requests + 1);
         pthread_mutex_unlock(&sv->lock);
 
         if (sv->exiting == 1)
@@ -353,8 +353,8 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     err = pthread_cond_init(&sv->empty, NULL);
     assert(err == 0);
 
-    sv->buffer_in = 0;
-    sv->buffer_out = 0;
+    sv->buff_in = 0;
+    sv->buff_out = 0;
 
     /* Lab 4: create queue of max_request size when max_requests > 0 */
     /* Lab 5: init server cache and limit its size to max_cache_size */
@@ -394,15 +394,15 @@ void server_request(struct server *sv, int connfd)
         *  worker threads do the work. */
         pthread_mutex_lock(&sv->lock);
 
-        while((sv->buffer_in - sv->buffer_out+sv->max_requests + 1)%(sv->max_requests + 1) == sv->max_requests)
+        while((sv->buff_in - sv->buff_out+sv->max_requests + 1)%(sv->max_requests + 1) == sv->max_requests)
         {
             pthread_cond_wait(&sv->full, &sv->lock);
         }
 
-        sv->request_buffer[sv->buffer_in] = connfd;
+        sv->request_buffer[sv->buff_in] = connfd;
         pthread_cond_signal(&sv->empty);
 
-        sv->buffer_in = (sv->buffer_in + 1)%(sv->max_requests + 1);
+        sv->buff_in = (sv->buff_in + 1)%(sv->max_requests + 1);
         pthread_mutex_unlock(&sv->lock);
     }
 }
