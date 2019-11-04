@@ -203,9 +203,9 @@ server_exit(struct server *sv)
 
     free(sv->request_buff);
     free(sv->worker_threads);
-//    free(sv->empty);
-//    free(sv->full);
-//    free(sv->lock);
+    free(sv->empty);
+    free(sv->full);
+    free(sv->lock);
 	/* make sure to free any allocated resources */
 	free(sv);
 }
