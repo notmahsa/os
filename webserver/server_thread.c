@@ -304,25 +304,21 @@ request_stub(void * sv_void) {
     struct server * sv = (struct server *)sv_void;
     while(sv->exiting == 0){
         pthread_mutex_lock(&sv->lock);
+        
         while(sv->buff_in == sv->buff_out){
             pthread_cond_wait(&sv->empty, &sv->lock);
-            if (sv->exiting == 1)
-            {
+            if (sv->exiting == 1){
                 pthread_mutex_unlock(&sv->lock);
                 return;
             }
         }
 
         int connfd = sv->request_buff[sv->buff_out];
-
-        pthread_cond_signal(&sv->full);
-
         sv->buff_out = (sv->buff_out + 1) % sv->max_requests;
+        pthread_cond_signal(&sv->full);
         pthread_mutex_unlock(&sv->lock);
 
-        if (sv->exiting == 1){
-            return;
-        }
+        if (sv->exiting == 1) return;
         do_server_request(sv, connfd);
     }
     pthread_mutex_unlock(&sv->lock);
@@ -436,11 +432,11 @@ void server_exit(struct server *sv)
 
     pthread_mutex_lock(&sv->lock);
     sv->exiting = 1;
+
     pthread_cond_broadcast(&sv->empty);
     pthread_mutex_unlock(&sv->lock);
 
-    for (int i = 0; i < sv->nr_threads; i++)
-    {
+    for (int i = 0; i < sv->nr_threads; i++){
         pthread_join(sv->worker_threads[i], NULL);
     }
 
@@ -449,7 +445,6 @@ void server_exit(struct server *sv)
     pthread_mutex_destroy(&sv->lock);
     pthread_cond_destroy(&sv->empty);
     pthread_cond_destroy(&sv->full);
-
 
     /* make sure to free any allocated resources */
     free(sv);
