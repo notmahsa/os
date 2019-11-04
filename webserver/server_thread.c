@@ -320,7 +320,7 @@ void start_routine(struct server *sv) {
 
         pthread_cond_signal(&sv->full);
 
-        buffer_out = (buffer_out + 1)%sv->max_requests;
+        buffer_out = (buffer_out + 1)%(sv->max_requests + 1);
         pthread_mutex_unlock(&sv->lock);
 
         if (sv->exiting == 1)
@@ -358,7 +358,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     {
         if(max_requests > 0)
         {
-            sv->buffer = (int *)malloc(max_requests * sizeof(int));
+            sv->buffer = (int *)malloc( (max_requests + 1) * sizeof(int));
         }
 
         if(nr_threads > 0)
