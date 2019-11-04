@@ -389,9 +389,8 @@ void server_request(struct server *sv, int connfd)
         }
 
         sv->request_buff[sv->buff_in] = connfd;
-        pthread_cond_signal(&sv->empty);
-
         sv->buff_in = (sv->buff_in + 1) % sv->max_requests;
+        pthread_cond_signal(&sv->empty);
         pthread_mutex_unlock(&sv->lock);
     }
 }
