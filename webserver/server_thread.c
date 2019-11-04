@@ -303,15 +303,9 @@ do_server_request(struct server *sv, int connfd)
 /* helper functions */
 void start_routine(struct server *sv) {
 
-    while(1)
+    while(sv->exiting == 0)
     {
         pthread_mutex_lock(&sv->lock);
-        if (sv->exiting == 1)
-        {
-            pthread_mutex_unlock(&sv->lock);
-            return;
-        }
-
         while(buffer_in == buffer_out)
         {
             pthread_cond_wait(&sv->empty, &sv->lock);
@@ -335,6 +329,7 @@ void start_routine(struct server *sv) {
         }
         do_server_request(sv, msg);
     }
+    pthread_mutex_unlock(&sv->lock);
 }
 
 /* entry point functions */
