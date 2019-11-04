@@ -373,7 +373,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
 
             for (int i = 0; i < nr_threads; i++)
             {
-                pthread_create(&sv->worker_threads[i], NULL, (void *)*request_stub, sv);
+                pthread_create(&sv->worker_threads[i], NULL, (void *)&request_stub, sv);
             }
         }
 
