@@ -198,7 +198,6 @@ server_exit(struct server *sv)
 
     pthread_cond_destroy(sv->empty);
     pthread_cond_destroy(sv->full);
-    pthread_mutex_lock(sv->lock);
     pthread_mutex_destroy(sv->lock);
 
     free(sv->request_buff);
