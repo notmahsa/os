@@ -372,19 +372,19 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
 
 void server_request(struct server *sv, int connfd)
 {
-    if(sv->nr_threads == 0)
-    {
+    if (sv->nr_threads == 0) {
         /* no worker threads */
         do_server_request(sv, connfd);
-    }
-    else
-    {
+    } else {
         /*  Save the relevant info in a buffer and have one of the
         *  worker threads do the work. */
         pthread_mutex_lock(&sv->lock);
+        if (sv->exiting == 1) {
+            pthread_mutex_unlock(sv->lock);
+            return;
+        }
 
-        while((sv->buff_in - sv->buff_out + sv->max_requests) % sv->max_requests == sv->max_requests - 1)
-        {
+        while((sv->buff_in - sv->buff_out + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
             pthread_cond_wait(&sv->full, &sv->lock);
         }
 
