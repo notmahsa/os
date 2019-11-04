@@ -344,9 +344,15 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
 
     sv->request_buffer = NULL;
     sv->worker_threads = NULL;
-    pthread_mutex_init(&sv->lock, NULL);
-    pthread_cond_init(&sv->empty, NULL);
-    pthread_cond_init(&sv->full, NULL);
+
+    err = pthread_mutex_init(&sv->lock, NULL);
+    assert(err == 0);
+
+    err = pthread_cond_init(&sv->full, NULL);
+    assert(err == 0);
+
+    err = pthread_cond_init(&sv->empty, NULL);
+    assert(err == 0);
 
     sv->buffer_in = 0;
     sv->buffer_out = 0;
