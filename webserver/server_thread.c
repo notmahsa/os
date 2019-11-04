@@ -241,7 +241,7 @@ struct server {
     pthread_cond_t empty;
     pthread_cond_t full;
     int buffer_in;
-    int buff_out;
+    int buffer_out;
 
 };
 
