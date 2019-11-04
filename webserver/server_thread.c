@@ -15,11 +15,13 @@ struct server {
     pthread_cond_t * full;
     pthread_cond_t * empty;
 
-    int buff_in;
     int buff_out;
+    int buff_in;
 
 };
 
+void
+request_stub(void * sv_void);
 /* static functions */
 
 /* initialize file data */
@@ -74,9 +76,6 @@ out:
 }
 
 /* entry point functions */
-void
-request_stub(void * sv_void);
-
 struct server *
 server_init(int nr_threads, int max_requests, int max_cache_size)
 {
@@ -89,7 +88,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->exiting = 0;
 
     int err;
-    
+
     sv->lock = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
     err = pthread_mutex_init(sv->lock, NULL);
     assert(err == 0);
@@ -102,8 +101,8 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
     err = pthread_cond_init(sv->empty, NULL);
     assert(err == 0);
 
-    sv->buff_in = 0;
     sv->buff_out = 0;
+    sv->buff_in = 0;
 
 	if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0) {
 	    if (nr_threads > 0){
@@ -142,14 +141,14 @@ request_stub(void * sv_void){
 
         pthread_mutex_lock(sv->lock);
 
-        while((sv->buff_in - sv->buff_out + sv->max_requests) % sv->max_requests == 0){
+        while((sv->buff_out - sv->buff_in + sv->max_requests) % sv->max_requests == 0){
             pthread_cond_wait(sv->empty, sv->lock);
         }
 
-        connfd = sv->request_buff[sv->buff_out];
-        sv->request_buff[sv->buff_out] = 0;
+        connfd = sv->request_buff[sv->buff_in];
+        sv->request_buff[sv->buff_in] = 0;
 
-        sv->buff_out = (sv->buff_out + 1) % sv->max_requests;
+        sv->buff_in = (sv->buff_in + 1) % sv->max_requests;
 
         pthread_cond_signal(sv->full);
         pthread_mutex_unlock(sv->lock);
@@ -165,15 +164,14 @@ server_request(struct server *sv, int connfd)
 	} else {
 		/*  Save the relevant info in a buffer and have one of the
 		 *  worker threads do the work. */
-
 		pthread_mutex_lock(sv->lock);
-        if ((sv->buff_in - sv->buff_out + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
+        if ((sv->buff_out - sv->buff_in + sv->max_requests) % sv->max_requests == sv->max_requests - 1){
             pthread_cond_wait(sv->full, sv->lock);
         }
 
-        sv->request_buff[sv->buff_in] = connfd;
+        sv->request_buff[sv->buff_out] = connfd;
 
-        sv->buff_in = (sv->buff_in + 1) % sv->max_requests;
+        sv->buff_out = (sv->buff_out + 1) % sv->max_requests;
 
         pthread_cond_signal(sv->empty);
         pthread_mutex_unlock(sv->lock);
