@@ -380,7 +380,7 @@ void server_request(struct server *sv, int connfd)
         *  worker threads do the work. */
         pthread_mutex_lock(&sv->lock);
         if (sv->exiting == 1) {
-            pthread_mutex_unlock(sv->lock);
+            pthread_mutex_unlock(&sv->lock);
             return;
         }
 
