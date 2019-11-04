@@ -302,10 +302,10 @@ out:
 void
 request_stub(void * sv_void) {
     struct server * sv = (struct server *)sv_void;
-    while(sv->exiting == 0){
+    while (sv->exiting == 0){
         pthread_mutex_lock(&sv->lock);
-        
-        while(sv->buff_in == sv->buff_out){
+
+        while (sv->buff_in == sv->buff_out){
             pthread_cond_wait(&sv->empty, &sv->lock);
             if (sv->exiting == 1){
                 pthread_mutex_unlock(&sv->lock);
@@ -317,38 +317,11 @@ request_stub(void * sv_void) {
         sv->buff_out = (sv->buff_out + 1) % sv->max_requests;
         pthread_cond_signal(&sv->full);
         pthread_mutex_unlock(&sv->lock);
-
         if (sv->exiting == 1) return;
         do_server_request(sv, connfd);
     }
     pthread_mutex_unlock(&sv->lock);
 }
-
-//void
-//request_stub(void * sv_void){
-//    struct server * sv = (struct server *)sv_void;
-//    while (sv->exiting == 0) {
-//        pthread_mutex_lock(sv->lock);
-//
-//        while(sv->buff_in == sv->buff_out){
-//            pthread_cond_wait(sv->empty, sv->lock);
-//            if (sv->exiting == 1){
-//                pthread_mutex_unlock(sv->lock);
-//                return;
-//            }
-//        }
-//
-//        int connfd = sv->request_buff[sv->buff_out];
-//        sv->request_buff[sv->buff_out] = 0;
-//
-//        sv->buff_out = (sv->buff_out + 1) % sv->max_requests;
-//
-//        pthread_cond_signal(sv->full);
-//        pthread_mutex_unlock(sv->lock);
-//        do_server_request(sv, connfd);
-//    }
-//    pthread_mutex_unlock(sv->lock);
-//}
 
 /* entry point functions */
 
