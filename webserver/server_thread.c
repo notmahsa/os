@@ -90,7 +90,7 @@ request_stub(void * sv_void) {
 
         int connfd = sv->request_buff[sv->buff_out];
         sv->buff_out = (sv->buff_out + 1) % sv->max_requests;
-        pthread_cond_signal(&sv->full);
+        pthread_cond_broadcast(&sv->full);
         pthread_mutex_unlock(&sv->lock);
         if (sv->exiting == 1) return;
         do_server_request(sv, connfd);
@@ -165,7 +165,7 @@ void server_request(struct server *sv, int connfd)
 
         sv->request_buff[sv->buff_in] = connfd;
         sv->buff_in = (sv->buff_in + 1) % sv->max_requests;
-        pthread_cond_signal(&sv->empty);
+        pthread_cond_broadcast(&sv->empty);
         pthread_mutex_unlock(&sv->lock);
     }
 }
