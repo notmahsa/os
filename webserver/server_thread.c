@@ -176,87 +176,87 @@ int
 cache_evict(struct server *sv, int bytes_to_evict)
 {
     printf("entered cache_evict\n");
-    struct table_entry *in_use_index = sv->least_recently_used;
-    int in_use_bytes = 0;
-    while(in_use_index != NULL) {
-        if(in_use_index->in_use) {
-            printf("%s in use -- don't evict me!\n",in_use_index->cache_data->file_name);
-            in_use_bytes += in_use_index->cache_data->file_size;
-        }
-        in_use_index = in_use_index->more_recently_used;
-    }
-    if(sv->max_cache_size - in_use_bytes < bytes_to_evict) {
-        printf("not enough memory, quitting cache_evict\n");
-        return -1;
-    }
-
-    int bytes_evicted = 0;
-    struct table_entry *tmp;
-    printf("least recently used block: %s\n",sv->least_recently_used->cache_data->file_name);
-    struct table_entry *index = sv->cache->word_table[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
-    struct table_entry *prev = NULL;
-    struct table_entry *eviction_index = sv->least_recently_used;
-    while(bytes_evicted < bytes_to_evict && eviction_index != NULL) {
-        if(eviction_index->in_use == 0) {
-            tmp = eviction_index;
-            eviction_index = eviction_index->more_recently_used;
-            printf("evicting %s\n",tmp->cache_data->file_name);
-            if(sv->cache->word_table[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
-                if(tmp == sv->least_recently_used) {
-                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
-                    if(sv->least_recently_used == NULL) //evicting only member of cache
-                    sv->most_recently_used = NULL;
-                }
-                else {
-                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
-                    if(tmp != sv->most_recently_used){
-                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
-                    }
-                    else {
-                        sv->most_recently_used = tmp->less_recently_used;
-                    }
-                }
-                sv->cache_remaining += tmp->cache_data->file_size;
-                sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
-                file_data_free(tmp->cache_data);
-                free(tmp);
-            }
-            else {
-                while(index != NULL && strcmp(index->cache_data->file_name, tmp->cache_data->file_name)!= 0) {
-                    prev = index;
-                    index = index->next;
-                }
-                if(prev == NULL){
-                    sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
-                }
-                else{
-                    prev->next = index->next;
-                }
-                if(tmp == sv->least_recently_used) {
-                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
-                    if(sv->least_recently_used == NULL){
-                        sv->most_recently_used = NULL;
-                    }
-                }
-                else {
-                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
-                    if(tmp != sv->most_recently_used){
-                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
-                    }
-                    else {
-                        sv->most_recently_used = tmp->less_recently_used;
-                    }
-                }
-
-                sv->cache_remaining += tmp->cache_data->file_size;
-                file_data_free(tmp->cache_data);
-                free(tmp);
-            }
-        }
-        else{
-            eviction_index = eviction_index->more_recently_used;
-        }
-    }
+//    struct table_entry *in_use_index = sv->least_recently_used;
+//    int in_use_bytes = 0;
+//    while(in_use_index != NULL) {
+//        if(in_use_index->in_use) {
+//            printf("%s in use -- don't evict me!\n",in_use_index->cache_data->file_name);
+//            in_use_bytes += in_use_index->cache_data->file_size;
+//        }
+//        in_use_index = in_use_index->more_recently_used;
+//    }
+//    if(sv->max_cache_size - in_use_bytes < bytes_to_evict) {
+//        printf("not enough memory, quitting cache_evict\n");
+//        return -1;
+//    }
+//
+//    int bytes_evicted = 0;
+//    struct table_entry *tmp;
+//    printf("least recently used block: %s\n",sv->least_recently_used->cache_data->file_name);
+//    struct table_entry *index = sv->cache->word_table[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
+//    struct table_entry *prev = NULL;
+//    struct table_entry *eviction_index = sv->least_recently_used;
+//    while(bytes_evicted < bytes_to_evict && eviction_index != NULL) {
+//        if(eviction_index->in_use == 0) {
+//            tmp = eviction_index;
+//            eviction_index = eviction_index->more_recently_used;
+//            printf("evicting %s\n",tmp->cache_data->file_name);
+//            if(sv->cache->word_table[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
+//                if(tmp == sv->least_recently_used) {
+//                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
+//                    if(sv->least_recently_used == NULL) //evicting only member of cache
+//                    sv->most_recently_used = NULL;
+//                }
+//                else {
+//                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
+//                    if(tmp != sv->most_recently_used){
+//                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
+//                    }
+//                    else {
+//                        sv->most_recently_used = tmp->less_recently_used;
+//                    }
+//                }
+//                sv->cache_remaining += tmp->cache_data->file_size;
+//                sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
+//                file_data_free(tmp->cache_data);
+//                free(tmp);
+//            }
+//            else {
+//                while(index != NULL && strcmp(index->cache_data->file_name, tmp->cache_data->file_name)!= 0) {
+//                    prev = index;
+//                    index = index->next;
+//                }
+//                if(prev == NULL){
+//                    sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
+//                }
+//                else{
+//                    prev->next = index->next;
+//                }
+//                if(tmp == sv->least_recently_used) {
+//                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
+//                    if(sv->least_recently_used == NULL){
+//                        sv->most_recently_used = NULL;
+//                    }
+//                }
+//                else {
+//                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
+//                    if(tmp != sv->most_recently_used){
+//                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
+//                    }
+//                    else {
+//                        sv->most_recently_used = tmp->less_recently_used;
+//                    }
+//                }
+//
+//                sv->cache_remaining += tmp->cache_data->file_size;
+//                file_data_free(tmp->cache_data);
+//                free(tmp);
+//            }
+//        }
+//        else{
+//            eviction_index = eviction_index->more_recently_used;
+//        }
+//    }
     printf("files successfully evicted\n");
     return 1;
 }
@@ -399,7 +399,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
         if (max_requests > 0){
             sv->request_buff = (int *)malloc(sv->max_requests * sizeof(int));
         }
-        if(max_cache_size > 0){
+        if (max_cache_size > 0){
             sv->cache = wc_init(max_cache_size);
             sv->cache_remaining = max_cache_size;
         }
