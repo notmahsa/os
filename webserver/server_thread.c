@@ -3,18 +3,17 @@
 #include "common.h"
 #include <pthread.h>
 
-struct table_entry {
-  char * word;
+struct cache_entry {
   int in_use;
   int done_caching;
   struct file_data * cache_data;
-  struct table_entry * next;
-  struct table_entry * more_recently_used;
-  struct table_entry * less_recently_used;
+  struct cache_entry * next;
+  struct cache_entry * more_recently_used;
+  struct cache_entry * less_recently_used;
 };
 
-struct wc {
-    struct table_entry ** word_table;
+struct cache_table {
+    struct cache_entry ** entries;
     long table_size;
 };
 
@@ -33,59 +32,58 @@ struct server {
     int buff_in;
     int buff_out;
 
-    struct wc * cache;
-    struct table_entry * least_recently_used;
-    struct table_entry * most_recently_used;
+    struct cache_table * cache;
+    struct cache_entry * least_recently_used;
+    struct cache_entry * most_recently_used;
     pthread_mutex_t cache_lock;
     int cache_remaining;
 };
 
-struct wc *
-wc_init(long size)
-{
-	struct wc * wc;
-	wc = (struct wc *)malloc(sizeof(struct wc));
-	assert(wc);
-	wc->word_table = (struct table_entry **)malloc(size * sizeof(struct table_entry *));
-	assert(wc->word_table);
-	wc->table_size = size;
-	return wc;
-}
+static void file_data_free(struct file_data *data);
+struct cache_table * cache_init(long size);
+struct cache_entry * cache_lookup(struct server *sv, char *file);
+struct cache_entry * cache_insert(struct server *sv, struct file_data *fd);
+int cache_evict(struct server *sv, int bytes_to_evict);
+void cache_destroy(struct cache_table *cache_table);
 
-static void
-file_data_free(struct file_data *data);
-int
-cache_evict(struct server *sv, int bytes_to_evict);
+struct cache_table *
+cache_init(long size)
+{
+	struct cache_table * cache_table = (struct cache_table *)malloc(sizeof(struct cache_table));
+	cache_table->entries = (struct cache_entry **)malloc(size * sizeof(struct cache_entry *));
+    cache_table->table_size = size;
+	return cache_table;
+}
 
 int
 hash(char *str, long table_size)
 {
     int hash = 5381;
     int c = 0;
-
     while ((c = *str++)){
         hash = ((hash << 5) + hash) + c;
     }
     if(hash < 0){
         hash *= -1;
     }
-
     hash = hash % table_size;
     return hash;
 }
 
-struct table_entry *
-cache_lookup(struct server *sv, struct wc *wc, char *str, int index)
+struct cache_entry *
+cache_lookup(struct server *sv, char *file)
 {
-    if(wc->word_table[index] == NULL){
-      printf("%s not found, quitting\n",str);
+    struct cache_table * cache_table = sv->cache;
+    int index = hash(file, sv->max_cache_size);
+    if(cache_table->entries[index] == NULL){
+      printf("%s not found, quitting\n",file);
       return NULL;
     }
-    struct table_entry * current_index = wc->word_table[index];
-    struct table_entry * tmp;
-    while(current_index != NULL){
-        if(strcmp(str,current_index->cache_data->file_name)==0){
-            if(sv->most_recently_used != current_index){
+    struct cache_entry * current_index = cache_table->entries[index];
+    struct cache_entry * tmp;
+    while (current_index != NULL){
+        if (strcmp(file, current_index->cache_data->file_name) == 0){
+            if (sv->most_recently_used != current_index){
                 current_index->more_recently_used->less_recently_used = current_index->less_recently_used;
                 tmp = current_index->more_recently_used;
                 current_index->more_recently_used = NULL;
@@ -102,19 +100,20 @@ cache_lookup(struct server *sv, struct wc *wc, char *str, int index)
             pthread_mutex_unlock(&sv->cache_lock);
             return current_index;
         }
-        current_index = current_index -> next;
+        current_index = current_index->next;
     }
     return NULL;
 }
 
-struct table_entry *
-cache_add(struct server *sv, struct file_data *fd, struct wc *wc)
+struct cache_entry *
+cache_insert(struct server *sv, struct file_data *fd)
 {
-    struct table_entry *lookup_ret = cache_lookup(sv, sv->cache, fd->file_name, hash(fd->file_name,sv->max_cache_size));
+    struct cache_table *cache_table = sv->cache;
+    struct cache_entry *lookup_ret = cache_lookup(sv, fd->file_name);
     if(lookup_ret != NULL){
         return lookup_ret;
     }
-    int index = hash(fd->file_name, wc->table_size); //find the index our data should go to (based on our hash function)
+    int index = hash(fd->file_name, cache_table->table_size);
     int evict_ret;
     if(fd->file_size > sv->max_cache_size){
         return NULL;
@@ -127,24 +126,24 @@ cache_add(struct server *sv, struct file_data *fd, struct wc *wc)
         }
     }
 
-    if(wc->word_table[index] == NULL){
-        wc->word_table[index] = (struct table_entry *)malloc(sizeof(struct table_entry));
-        wc->word_table[index]->cache_data = fd;
-        wc->word_table[index]->next = NULL;
-        wc->word_table[index]->in_use = 0;
+    if(cache_table->entries[index] == NULL){
+        cache_table->entries[index] = (struct cache_entry *)malloc(sizeof(struct cache_entry));
+        cache_table->entries[index]->cache_data = fd;
+        cache_table->entries[index]->next = NULL;
+        cache_table->entries[index]->in_use = 0;
+        cache_table->entries[index]->more_recently_used = NULL;
+        cache_table->entries[index]->less_recently_used = sv->most_recently_used;
 
-        wc->word_table[index]->more_recently_used = NULL;
-        wc->word_table[index]->less_recently_used = sv->most_recently_used;
         if(sv->most_recently_used != NULL){
-            sv->most_recently_used->more_recently_used = wc->word_table[index];
+            sv->most_recently_used->more_recently_used = cache_table->entries[index];
         }
         else {
-            sv->least_recently_used = wc->word_table[index];
+            sv->least_recently_used = cache_table->entries[index];
         }
-        sv->most_recently_used = wc->word_table[index];
+        sv->most_recently_used = cache_table->entries[index];
     }
     else {
-        struct table_entry *end_of_list = wc->word_table[index];
+        struct cache_entry *end_of_list = cache_table->entries[index];
         while(end_of_list != NULL){
             if(strcmp(end_of_list->cache_data->file_name,fd->file_name) == 0){
                 printf("%s already cached, no add is performed\n",end_of_list->cache_data->file_name);
@@ -152,30 +151,30 @@ cache_add(struct server *sv, struct file_data *fd, struct wc *wc)
             }
             end_of_list = end_of_list->next;
         }
-        struct table_entry *te = (struct table_entry *)malloc(sizeof(struct table_entry));
+        struct cache_entry *te = (struct cache_entry *)malloc(sizeof(struct cache_entry));
         te->cache_data = fd;
         te->next = NULL;
-        wc->word_table[index]->more_recently_used = NULL;
-        wc->word_table[index]->less_recently_used = sv->most_recently_used;
+        cache_table->entries[index]->more_recently_used = NULL;
+        cache_table->entries[index]->less_recently_used = sv->most_recently_used;
         if(sv->most_recently_used != NULL){
-            sv->most_recently_used->more_recently_used = wc->word_table[index];
+            sv->most_recently_used->more_recently_used = cache_table->entries[index];
         }
         else {
-            sv->least_recently_used = wc->word_table[index];
+            sv->least_recently_used = cache_table->entries[index];
         }
-        sv->most_recently_used = wc->word_table[index];
+        sv->most_recently_used = cache_table->entries[index];
         end_of_list->next = te;
     }
     printf("added %s to the cache.\n",fd->file_name);
     sv->cache_remaining = sv->cache_remaining - fd->file_size;
-    return wc->word_table[index];
+    return cache_table->entries[index];
 }
 
 int
 cache_evict(struct server *sv, int bytes_to_evict)
 {
     printf("entered cache_evict\n");
-    struct table_entry *in_use_index = sv->least_recently_used;
+    struct cache_entry *in_use_index = sv->least_recently_used;
     int in_use_bytes = 0;
     while(in_use_index != NULL) {
         if(in_use_index->in_use) {
@@ -190,21 +189,22 @@ cache_evict(struct server *sv, int bytes_to_evict)
     }
 
     int bytes_evicted = 0;
-    struct table_entry *tmp;
+    struct cache_entry *tmp;
     printf("least recently used block: %s\n",sv->least_recently_used->cache_data->file_name);
-    struct table_entry *index = sv->cache->word_table[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
-    struct table_entry *prev = NULL;
-    struct table_entry *eviction_index = sv->least_recently_used;
+    struct cache_entry *index = sv->cache->entries[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
+    struct cache_entry *prev = NULL;
+    struct cache_entry *eviction_index = sv->least_recently_used;
     while(bytes_evicted < bytes_to_evict && eviction_index != NULL) {
         if(eviction_index->in_use == 0) {
             tmp = eviction_index;
             eviction_index = eviction_index->more_recently_used;
             printf("evicting %s\n",tmp->cache_data->file_name);
-            if(sv->cache->word_table[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
+            if(sv->cache->entries[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
                 if(tmp == sv->least_recently_used) {
                     sv->least_recently_used = sv->least_recently_used->more_recently_used;
-                    if(sv->least_recently_used == NULL) //evicting only member of cache
-                    sv->most_recently_used = NULL;
+                    if(sv->least_recently_used == NULL){
+                        sv->most_recently_used = NULL;
+                    }
                 }
                 else {
                     tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
@@ -216,7 +216,7 @@ cache_evict(struct server *sv, int bytes_to_evict)
                     }
                 }
                 sv->cache_remaining += tmp->cache_data->file_size;
-                sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
+                sv->cache->entries[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
                 file_data_free(tmp->cache_data);
                 free(tmp);
             }
@@ -226,7 +226,7 @@ cache_evict(struct server *sv, int bytes_to_evict)
                     index = index->next;
                 }
                 if(prev == NULL){
-                    sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
+                    sv->cache->entries[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
                 }
                 else{
                     prev->next = index->next;
@@ -260,30 +260,27 @@ cache_evict(struct server *sv, int bytes_to_evict)
     return 1;
 }
 
-void table_entry_delete(struct table_entry *table)
+void cache_entry_delete(struct cache_entry *table)
 {
     if(table->next != NULL){
-        table_entry_delete(table->next);
+        cache_entry_delete(table->next);
     }
-    free(table->word);
     free(table);
 }
 
 void
-wc_destroy(struct wc *wc)
+cache_destroy(struct cache_table *cache_table)
 {
     int i = 0;
-    while(i < wc->table_size) {
-        if(wc->word_table[i] != NULL){
-            table_entry_delete(wc->word_table[i]);
+    while(i < cache_table->table_size) {
+        if(cache_table->entries[i] != NULL){
+            cache_entry_delete(cache_table->entries[i]);
         }
         i++;
     }
-    free(wc->word_table);
-    free(wc);
+    free(cache_table->entries);
+    free(cache_table);
 }
-
-void worker_request_loop(void *sv);
 
 /* static functions */
 
@@ -315,7 +312,7 @@ do_server_request(struct server *sv, int connfd)
 	int ret;
 	struct request *rq;
 	struct file_data *data;
-	struct table_entry * cache_fd;
+	struct cache_entry * cache_fd;
 
 	data = file_data_init();
 
@@ -330,13 +327,13 @@ do_server_request(struct server *sv, int connfd)
 	 * data->file_size with file size. */
 	if (sv->max_cache_size > 0){
         pthread_mutex_lock(&sv->cache_lock);
-        cache_fd = cache_lookup(sv, sv->cache, data->file_name, hash(data->file_name,sv->max_cache_size));
+        cache_fd = cache_lookup(sv, data->file_name);
         if (cache_fd == NULL) {
             printf("cache miss, requesting file from disk.\n");
             pthread_mutex_unlock(&sv->cache_lock);
             ret = request_readfile(rq);
             pthread_mutex_lock(&sv->cache_lock);
-            cache_fd = cache_add(sv,data,sv->cache);
+            cache_fd = cache_insert(sv, data);
             if(cache_fd != NULL) {
                 cache_fd->in_use++;
             }
@@ -428,8 +425,13 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
     err = pthread_cond_init(&sv->empty, NULL);
     assert(err == 0);
 
+    err = pthread_mutex_init(&sv->cache_lock, NULL);
+    assert(err == 0);
+
     sv->buff_in = 0;
     sv->buff_out = 0;
+    sv->most_recently_used = NULL;
+    sv->least_recently_used = NULL;
 
     if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0){
         if (nr_threads > 0){
@@ -443,7 +445,7 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
             sv->request_buff = (int *)malloc(sv->max_requests * sizeof(int));
         }
         if (max_cache_size > 0){
-            sv->cache = wc_init(max_cache_size);
+            sv->cache = cache_init(max_cache_size);
             sv->cache_remaining = max_cache_size;
         }
     }
