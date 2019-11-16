@@ -328,13 +328,13 @@ do_server_request(struct server *sv, int connfd)
 	 * fills data->file_buf with the file contents,
 	 * data->file_size with file size. */
 	if (sv->max_cache_size > 0){
-        pthread_mutex_lock(sv->cache_lock);
+        pthread_mutex_lock(&sv->cache_lock);
         cache_fd = cache_lookup(sv, sv->cache, data->file_name, hash(data->file_name,sv->max_cache_size));
         if (cache_fd == NULL) {
             printf("cache miss, requesting file from disk.\n");
             pthread_mutex_unlock(sv->cache_lock);
             ret = request_readfile(rq);
-            pthread_mutex_lock(sv->cache_lock);
+            pthread_mutex_lock(&sv->cache_lock);
             cache_fd = cache_add(sv,data,sv->cache);
             if(cache_fd != NULL) {
                 cache_fd->in_use++;
@@ -349,7 +349,7 @@ do_server_request(struct server *sv, int connfd)
             pthread_mutex_unlock(sv->cache_lock);
 
             request_sendfile(rq);
-            pthread_mutex_lock(sv->cache_lock);
+            pthread_mutex_lock(&sv->cache_lock);
             cache_fd->in_use--; //no longer using the data -- safe to evict.
             printf("%s finished sending, %d other requests sending it now.\n",cache_fd->cache_data->file_name,cache_fd->in_use);
             pthread_mutex_unlock(sv->cache_lock);
@@ -362,7 +362,7 @@ do_server_request(struct server *sv, int connfd)
         printf("cache miss, sending %s to client\n", data->file_name);
         request_sendfile(rq);
         if(cache_fd != NULL) {
-            pthread_mutex_lock(sv->cache_lock);
+            pthread_mutex_lock(&sv->cache_lock);
             cache_fd->in_use--;
             printf("%s finished sending, %d other requests sending it now.\n",cache_fd->cache_data->file_name,cache_fd->in_use);
             pthread_mutex_unlock(sv->cache_lock);
