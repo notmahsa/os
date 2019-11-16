@@ -100,7 +100,7 @@ cache_lookup(struct server *sv, struct wc *wc, char *str, int index)
                 current_index->less_recently_used = sv->most_recently_used;
                 sv->most_recently_used = current_index;
             }
-            pthread_mutex_unlock(sv->cache_lock);
+            pthread_mutex_unlock(&sv->cache_lock);
             return current_index;
         }
         current_index = current_index -> next;
@@ -400,17 +400,8 @@ struct server *server_init(int nr_threads, int max_requests, int max_cache_size)
             sv->request_buff = (int *)malloc(sv->max_requests * sizeof(int));
         }
         if(max_cache_size > 0){
-            sv->cache = (cache_table*)malloc(sizeof(cache_table));
-            assert(sv->cache);
-            sv->cache->table_size = max_cache_size;
-            sv->cache->hash_element = (cache_table_element **)malloc(sizeof(cache_table_element *)*max_cache_size);
-            int i;
-            for(i=0; i< sv->cache->table_size ; i++){
-                sv->cache->hash_element[i] = NULL;
-            }
-        }
-        else if (max_cache_size ==0){
-            sv->cache = NULL;
+            sv->cache = wc_init(max_cache_size);
+            sv->cache_remaining = max_cache_size;
         }
     }
 
