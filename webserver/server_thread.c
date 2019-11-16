@@ -14,8 +14,8 @@ struct table_entry {
 };
 
 struct wc {
-  struct table_entry ** word_table;
-  long table_size;
+    struct table_entry ** word_table;
+    long table_size;
 };
 
 struct server {
@@ -33,12 +33,11 @@ struct server {
     int buff_in;
     int buff_out;
 
-    struct wc *cache;
+    struct wc * cache;
     struct table_entry * least_recently_used;
     struct table_entry * most_recently_used;
     pthread_mutex_t cache_lock;
     int cache_remaining;
-
 };
 
 struct wc *
@@ -176,98 +175,98 @@ int
 cache_evict(struct server *sv, int bytes_to_evict)
 {
     printf("entered cache_evict\n");
-//    struct table_entry *in_use_index = sv->least_recently_used;
-//    int in_use_bytes = 0;
-//    while(in_use_index != NULL) {
-//        if(in_use_index->in_use) {
-//            printf("%s in use -- don't evict me!\n",in_use_index->cache_data->file_name);
-//            in_use_bytes += in_use_index->cache_data->file_size;
-//        }
-//        in_use_index = in_use_index->more_recently_used;
-//    }
-//    if(sv->max_cache_size - in_use_bytes < bytes_to_evict) {
-//        printf("not enough memory, quitting cache_evict\n");
-//        return -1;
-//    }
-//
-//    int bytes_evicted = 0;
-//    struct table_entry *tmp;
-//    printf("least recently used block: %s\n",sv->least_recently_used->cache_data->file_name);
-//    struct table_entry *index = sv->cache->word_table[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
-//    struct table_entry *prev = NULL;
-//    struct table_entry *eviction_index = sv->least_recently_used;
-//    while(bytes_evicted < bytes_to_evict && eviction_index != NULL) {
-//        if(eviction_index->in_use == 0) {
-//            tmp = eviction_index;
-//            eviction_index = eviction_index->more_recently_used;
-//            printf("evicting %s\n",tmp->cache_data->file_name);
-//            if(sv->cache->word_table[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
-//                if(tmp == sv->least_recently_used) {
-//                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
-//                    if(sv->least_recently_used == NULL) //evicting only member of cache
-//                    sv->most_recently_used = NULL;
-//                }
-//                else {
-//                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
-//                    if(tmp != sv->most_recently_used){
-//                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
-//                    }
-//                    else {
-//                        sv->most_recently_used = tmp->less_recently_used;
-//                    }
-//                }
-//                sv->cache_remaining += tmp->cache_data->file_size;
-//                sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
-//                file_data_free(tmp->cache_data);
-//                free(tmp);
-//            }
-//            else {
-//                while(index != NULL && strcmp(index->cache_data->file_name, tmp->cache_data->file_name)!= 0) {
-//                    prev = index;
-//                    index = index->next;
-//                }
-//                if(prev == NULL){
-//                    sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
-//                }
-//                else{
-//                    prev->next = index->next;
-//                }
-//                if(tmp == sv->least_recently_used) {
-//                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
-//                    if(sv->least_recently_used == NULL){
-//                        sv->most_recently_used = NULL;
-//                    }
-//                }
-//                else {
-//                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
-//                    if(tmp != sv->most_recently_used){
-//                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
-//                    }
-//                    else {
-//                        sv->most_recently_used = tmp->less_recently_used;
-//                    }
-//                }
-//
-//                sv->cache_remaining += tmp->cache_data->file_size;
-//                file_data_free(tmp->cache_data);
-//                free(tmp);
-//            }
-//        }
-//        else{
-//            eviction_index = eviction_index->more_recently_used;
-//        }
-//    }
+    struct table_entry *in_use_index = sv->least_recently_used;
+    int in_use_bytes = 0;
+    while(in_use_index != NULL) {
+        if(in_use_index->in_use) {
+            printf("%s in use -- don't evict me!\n",in_use_index->cache_data->file_name);
+            in_use_bytes += in_use_index->cache_data->file_size;
+        }
+        in_use_index = in_use_index->more_recently_used;
+    }
+    if(sv->max_cache_size - in_use_bytes < bytes_to_evict) {
+        printf("not enough memory, quitting cache_evict\n");
+        return -1;
+    }
+
+    int bytes_evicted = 0;
+    struct table_entry *tmp;
+    printf("least recently used block: %s\n",sv->least_recently_used->cache_data->file_name);
+    struct table_entry *index = sv->cache->word_table[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
+    struct table_entry *prev = NULL;
+    struct table_entry *eviction_index = sv->least_recently_used;
+    while(bytes_evicted < bytes_to_evict && eviction_index != NULL) {
+        if(eviction_index->in_use == 0) {
+            tmp = eviction_index;
+            eviction_index = eviction_index->more_recently_used;
+            printf("evicting %s\n",tmp->cache_data->file_name);
+            if(sv->cache->word_table[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
+                if(tmp == sv->least_recently_used) {
+                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
+                    if(sv->least_recently_used == NULL) //evicting only member of cache
+                    sv->most_recently_used = NULL;
+                }
+                else {
+                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
+                    if(tmp != sv->most_recently_used){
+                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
+                    }
+                    else {
+                        sv->most_recently_used = tmp->less_recently_used;
+                    }
+                }
+                sv->cache_remaining += tmp->cache_data->file_size;
+                sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
+                file_data_free(tmp->cache_data);
+                free(tmp);
+            }
+            else {
+                while(index != NULL && strcmp(index->cache_data->file_name, tmp->cache_data->file_name)!= 0) {
+                    prev = index;
+                    index = index->next;
+                }
+                if(prev == NULL){
+                    sv->cache->word_table[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
+                }
+                else{
+                    prev->next = index->next;
+                }
+                if(tmp == sv->least_recently_used) {
+                    sv->least_recently_used = sv->least_recently_used->more_recently_used;
+                    if(sv->least_recently_used == NULL){
+                        sv->most_recently_used = NULL;
+                    }
+                }
+                else {
+                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
+                    if(tmp != sv->most_recently_used){
+                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
+                    }
+                    else {
+                        sv->most_recently_used = tmp->less_recently_used;
+                    }
+                }
+
+                sv->cache_remaining += tmp->cache_data->file_size;
+                file_data_free(tmp->cache_data);
+                free(tmp);
+            }
+        }
+        else{
+            eviction_index = eviction_index->more_recently_used;
+        }
+    }
     printf("files successfully evicted\n");
     return 1;
 }
 
-void table_entry_delete(struct table_entry *te)
+void table_entry_delete(struct table_entry *table)
 {
-    if(te->next != NULL){
-        table_entry_delete(te->next);
+    if(table->next != NULL){
+        table_entry_delete(table->next);
     }
-    free(te->word);
-    free(te);
+    free(table->word);
+    free(table);
 }
 
 void
@@ -328,9 +327,52 @@ do_server_request(struct server *sv, int connfd)
 	/* read file,
 	 * fills data->file_buf with the file contents,
 	 * data->file_size with file size. */
-	ret = request_readfile(rq);
-	if (ret == 0) { /* couldn't read file */
-		goto out;
+	if (sv->max_cache_size > 0){
+        pthread_mutex_lock(sv->cache_lock);
+        cache_fd = cache_lookup(sv, sv->cache, data->file_name, hash(data->file_name,sv->max_cache_size));
+        if (cache_fd == NULL) {
+            printf("cache miss, requesting file from disk.\n");
+            pthread_mutex_unlock(sv->cache_lock);
+            ret = request_readfile(rq);
+            pthread_mutex_lock(sv->cache_lock);
+            cache_fd = cache_add(sv,data,sv->cache);
+            if(cache_fd != NULL) {
+                cache_fd->in_use++;
+            }
+            pthread_mutex_unlock(sv->cache_lock);
+        }
+        else {
+            printf("cache hit, sending %s.\n",cache_fd->cache_data->file_name);
+            data->file_buf = cache_fd->cache_data->file_buf;
+            data->file_size = cache_fd->cache_data->file_size;
+            cache_fd->in_use++; //to indicate how many files are using the data, as there could be more than one.
+            pthread_mutex_unlock(sv->cache_lock);
+
+            request_sendfile(rq);
+            pthread_mutex_lock(sv->cache_lock);
+            cache_fd->in_use--; //no longer using the data -- safe to evict.
+            printf("%s finished sending, %d other requests sending it now.\n",cache_fd->cache_data->file_name,cache_fd->in_use);
+            pthread_mutex_unlock(sv->cache_lock);
+            goto out;
+        }
+        if (!ret) {
+          goto out;
+        }
+        /* sends file to client */
+        printf("cache miss, sending %s to client\n", data->file_name);
+        request_sendfile(rq);
+        if(cache_fd != NULL) {
+            pthread_mutex_lock(sv->cache_lock);
+            cache_fd->in_use--;
+            printf("%s finished sending, %d other requests sending it now.\n",cache_fd->cache_data->file_name,cache_fd->in_use);
+            pthread_mutex_unlock(sv->cache_lock);
+        }
+    }
+    else {
+        ret = request_readfile(rq);
+        if (ret == 0) { /* couldn't read file */
+            goto out;
+        }
 	}
 	/* send file to client */
 	request_sendfile(rq);
