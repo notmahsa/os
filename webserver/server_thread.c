@@ -7,8 +7,14 @@ struct cache_entry {
   int in_use;
   int done_caching;
   struct file_data * cache_data;
+
+  // Hashtable linked list
   struct cache_entry * next;
+
+  // Next in chain, MRU.
   struct cache_entry * more_recently_used;
+
+  // Next in chain, LRU.
   struct cache_entry * less_recently_used;
 };
 
@@ -75,32 +81,32 @@ cache_lookup(struct server *sv, char *file)
 {
     struct cache_table * cache_table = sv->cache;
     int index = hash(file, sv->max_cache_size);
-    if(cache_table->entries[index] == NULL){
+    if (cache_table->entries[index] == NULL){
       printf("%s not found, quitting\n",file);
       return NULL;
     }
-    struct cache_entry * current_index = cache_table->entries[index];
-    struct cache_entry * tmp;
-    while (current_index != NULL){
-        if (strcmp(file, current_index->cache_data->file_name) == 0){
-            if (sv->most_recently_used != current_index){
-                current_index->more_recently_used->less_recently_used = current_index->less_recently_used;
-                tmp = current_index->more_recently_used;
-                current_index->more_recently_used = NULL;
-                if(sv->least_recently_used != current_index){
-                    current_index->less_recently_used->more_recently_used = tmp;
+    struct cache_entry * current_entry = cache_table->entries[index];
+    struct cache_entry * temp;
+    while (current_entry != NULL){
+        if (strcmp(file, current_entry->cache_data->file_name) == 0){
+            if (sv->most_recently_used != current_entry){
+                current_entry->more_recently_used->less_recently_used = current_entry->less_recently_used;
+                temp = current_entry->more_recently_used;
+                current_entry->more_recently_used = NULL;
+                if (sv->least_recently_used != current_entry){
+                    current_entry->less_recently_used->more_recently_used = temp;
                 }
                 else{
-                    sv->least_recently_used = tmp;
+                    sv->least_recently_used = temp;
                 }
-                sv->most_recently_used->more_recently_used = current_index;
-                current_index->less_recently_used = sv->most_recently_used;
-                sv->most_recently_used = current_index;
+                sv->most_recently_used->more_recently_used = current_entry;
+                current_entry->less_recently_used = sv->most_recently_used;
+                sv->most_recently_used = current_entry;
             }
             pthread_mutex_unlock(&sv->cache_lock);
-            return current_index;
+            return current_entry;
         }
-        current_index = current_index->next;
+        current_entry = current_entry->next;
     }
     return NULL;
 }
@@ -108,25 +114,26 @@ cache_lookup(struct server *sv, char *file)
 struct cache_entry *
 cache_insert(struct server *sv, struct file_data *fd)
 {
-    struct cache_table *cache_table = sv->cache;
-    struct cache_entry *lookup_ret = cache_lookup(sv, fd->file_name);
-    if(lookup_ret != NULL){
+    struct cache_table * cache_table = sv->cache;
+    struct cache_entry * lookup_ret = cache_lookup(sv, fd->file_name);
+    if (lookup_ret != NULL){
         return lookup_ret;
     }
     int index = hash(fd->file_name, cache_table->table_size);
     int evict_ret;
-    if(fd->file_size > sv->max_cache_size){
+
+    if (fd->file_size > sv->max_cache_size){
         return NULL;
     }
-    if(fd->file_size > sv->cache_remaining){
-        printf("attempting to evict files to make room for %s\n",fd->file_name);
-        evict_ret = cache_evict(sv,fd->file_size-sv->cache_remaining);
-        if(evict_ret == -1){
+
+    if (fd->file_size > sv->cache_remaining){
+        evict_ret = cache_evict(sv, fd->file_size - sv->cache_remaining);
+        if (evict_ret == -1){
             return NULL;
         }
     }
 
-    if(cache_table->entries[index] == NULL){
+    if (cache_table->entries[index] == NULL){
         cache_table->entries[index] = (struct cache_entry *)malloc(sizeof(struct cache_entry));
         cache_table->entries[index]->cache_data = fd;
         cache_table->entries[index]->next = NULL;
@@ -140,20 +147,21 @@ cache_insert(struct server *sv, struct file_data *fd)
         else {
             sv->least_recently_used = cache_table->entries[index];
         }
+
         sv->most_recently_used = cache_table->entries[index];
     }
     else {
-        struct cache_entry *end_of_list = cache_table->entries[index];
-        while(end_of_list != NULL){
-            if(strcmp(end_of_list->cache_data->file_name,fd->file_name) == 0){
-                printf("%s already cached, no add is performed\n",end_of_list->cache_data->file_name);
-                return end_of_list;
+        struct cache_entry * last_elem = cache_table->entries[index];
+        while (last_elem != NULL && last_elem->next != NULL){
+            if (strcmp(last_elem->cache_data->file_name, fd->file_name) == 0){
+                // Should never get here.
+                return last_elem;
             }
-            end_of_list = end_of_list->next;
+            last_elem = last_elem->next;
         }
-        struct cache_entry *te = (struct cache_entry *)malloc(sizeof(struct cache_entry));
-        te->cache_data = fd;
-        te->next = NULL;
+        struct cache_entry *new_table_entry = (struct cache_entry *)malloc(sizeof(struct cache_entry));
+        new_table_entry->cache_data = fd;
+        new_table_entry->next = NULL;
         cache_table->entries[index]->more_recently_used = NULL;
         cache_table->entries[index]->less_recently_used = sv->most_recently_used;
         if(sv->most_recently_used != NULL){
@@ -163,93 +171,103 @@ cache_insert(struct server *sv, struct file_data *fd)
             sv->least_recently_used = cache_table->entries[index];
         }
         sv->most_recently_used = cache_table->entries[index];
-        end_of_list->next = te;
+        last_elem->next = new_table_entry;
     }
-    printf("added %s to the cache.\n",fd->file_name);
-    sv->cache_remaining = sv->cache_remaining - fd->file_size;
+
+    sv->cache_remaining -= fd->file_size;
     return cache_table->entries[index];
 }
 
 int
 cache_evict(struct server *sv, int bytes_to_evict)
 {
-    printf("entered cache_evict\n");
-    struct cache_entry *in_use_index = sv->least_recently_used;
+    struct cache_entry * in_use_index = sv->least_recently_used;
     int in_use_bytes = 0;
-    while(in_use_index != NULL) {
-        if(in_use_index->in_use) {
-            printf("%s in use -- don't evict me!\n",in_use_index->cache_data->file_name);
+    while (in_use_index != NULL) {
+        if (in_use_index->in_use) {
+            // Do not evict.
             in_use_bytes += in_use_index->cache_data->file_size;
         }
+//        if (in_use_index->next != NULL){
+//            struct cache_entry * current = in_use_index;
+//            while (current != NULL){
+//                if (current->in_use) {
+//                    in_use_bytes += current->cache_data->file_size;
+//                }
+//                current = current->next;
+//            }
+//        }
         in_use_index = in_use_index->more_recently_used;
     }
-    if(sv->max_cache_size - in_use_bytes < bytes_to_evict) {
-        printf("not enough memory, quitting cache_evict\n");
+    if (sv->max_cache_size - in_use_bytes < bytes_to_evict) {
         return -1;
     }
 
     int bytes_evicted = 0;
-    struct cache_entry *tmp;
-    printf("least recently used block: %s\n",sv->least_recently_used->cache_data->file_name);
-    struct cache_entry *index = sv->cache->entries[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
-    struct cache_entry *prev = NULL;
-    struct cache_entry *eviction_index = sv->least_recently_used;
-    while(bytes_evicted < bytes_to_evict && eviction_index != NULL) {
-        if(eviction_index->in_use == 0) {
-            tmp = eviction_index;
+    struct cache_entry * temp;
+    struct cache_entry * index;
+    struct cache_entry * prev;
+    struct cache_entry * eviction_index;
+
+    index = sv->cache->entries[hash(sv->least_recently_used->cache_data->file_name, sv->max_cache_size)];
+    prev = NULL;
+    eviction_index = sv->least_recently_used;
+
+    while (bytes_evicted < bytes_to_evict && eviction_index != NULL) {
+        if (eviction_index->in_use == 0) {
+            temp = eviction_index;
             eviction_index = eviction_index->more_recently_used;
-            printf("evicting %s\n",tmp->cache_data->file_name);
-            if(sv->cache->entries[hash(tmp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
-                if(tmp == sv->least_recently_used) {
+            if (sv->cache->entries[hash(temp->cache_data->file_name, sv->max_cache_size)]->next == NULL) {
+                if(temp == sv->least_recently_used) {
                     sv->least_recently_used = sv->least_recently_used->more_recently_used;
                     if(sv->least_recently_used == NULL){
                         sv->most_recently_used = NULL;
                     }
                 }
                 else {
-                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
-                    if(tmp != sv->most_recently_used){
-                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
+                    temp->less_recently_used->more_recently_used = temp->more_recently_used;
+                    if(temp != sv->most_recently_used){
+                        temp->more_recently_used->less_recently_used = temp->less_recently_used;
                     }
                     else {
-                        sv->most_recently_used = tmp->less_recently_used;
+                        sv->most_recently_used = temp->less_recently_used;
                     }
                 }
-                sv->cache_remaining += tmp->cache_data->file_size;
-                sv->cache->entries[hash(tmp->cache_data->file_name,sv->max_cache_size)] = NULL;
-                file_data_free(tmp->cache_data);
-                free(tmp);
+                sv->cache_remaining += temp->cache_data->file_size;
+                sv->cache->entries[hash(temp->cache_data->file_name,sv->max_cache_size)] = NULL;
+                file_data_free(temp->cache_data);
+                free(temp);
             }
             else {
-                while(index != NULL && strcmp(index->cache_data->file_name, tmp->cache_data->file_name)!= 0) {
+                while(index != NULL && strcmp(index->cache_data->file_name, temp->cache_data->file_name)!= 0) {
                     prev = index;
                     index = index->next;
                 }
                 if(prev == NULL){
-                    sv->cache->entries[hash(tmp->cache_data->file_name,sv->max_cache_size)] = index->next;
+                    sv->cache->entries[hash(temp->cache_data->file_name,sv->max_cache_size)] = index->next;
                 }
                 else{
                     prev->next = index->next;
                 }
-                if(tmp == sv->least_recently_used) {
+                if(temp == sv->least_recently_used) {
                     sv->least_recently_used = sv->least_recently_used->more_recently_used;
                     if(sv->least_recently_used == NULL){
                         sv->most_recently_used = NULL;
                     }
                 }
                 else {
-                    tmp->less_recently_used->more_recently_used = tmp->more_recently_used;
-                    if(tmp != sv->most_recently_used){
-                        tmp->more_recently_used->less_recently_used = tmp->less_recently_used;
+                    temp->less_recently_used->more_recently_used = temp->more_recently_used;
+                    if(temp != sv->most_recently_used){
+                        temp->more_recently_used->less_recently_used = temp->less_recently_used;
                     }
                     else {
-                        sv->most_recently_used = tmp->less_recently_used;
+                        sv->most_recently_used = temp->less_recently_used;
                     }
                 }
 
-                sv->cache_remaining += tmp->cache_data->file_size;
-                file_data_free(tmp->cache_data);
-                free(tmp);
+                sv->cache_remaining += temp->cache_data->file_size;
+                file_data_free(temp->cache_data);
+                free(temp);
             }
         }
         else{
