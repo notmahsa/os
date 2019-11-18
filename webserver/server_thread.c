@@ -343,21 +343,23 @@ cache_insert(struct server *sv, const struct request *rq)
 int
 cache_evict(struct server *sv, int bytes_to_evict){
     int at_capacity = 0;
-    // struct rlu_table * current = rlu_table;
     struct rlu_table * last = rlu_table;
     if (last == NULL) return 0;
     while(last->next != NULL){
         last = last->next;
     }
-    // last = current;
     while (bytes_to_evict > 0 && !at_capacity) {
+    // Some in_use files may be done reading, but we step over them right now, and never check again.
+    // May need to acquire lock.
         struct cache_entry * current = cache_lookup(sv, last->file);
-        while (!at_capacity && current->in_use != 0){
-            last = last->prev;
-            if (last != NULL) current = cache_lookup(sv, last->file);
+        while (!at_capacity && current->in_use != 0){\
+            if (last->prev){
+                last = last->prev;
+                current = cache_lookup(sv, last->file);
+            }
             else at_capacity = 1;
         }
-
+        // Variable "last" here marks the last file in the LRU table, that is not in use.
         if (!at_capacity) {
             bytes_to_evict -= current->cache_data->file_size;
             sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
