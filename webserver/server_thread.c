@@ -345,9 +345,11 @@ cache_evict(struct server *sv, int bytes_to_evict){
     int at_capacity = 0;
     struct rlu_table * last = rlu_table;
     if (last == NULL) return 0;
+
     while(last->next != NULL){
         last = last->next;
     }
+
     while (bytes_to_evict > 0 && !at_capacity) {
         struct cache_entry * current = cache_lookup(sv, last->file);
         while (!at_capacity && current->in_use != 0){
@@ -366,17 +368,18 @@ cache_evict(struct server *sv, int bytes_to_evict){
                 at_capacity = 1;
                 if (last->next != NULL) last->next->prev = NULL;
             }
-            bytes_to_evict -= current->cache_data->file_size;
-            sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
+
             struct rlu_table * temp = last->prev;
             free(last);
             last = temp;
             current->deleted = 1;
+            bytes_to_evict -= current->cache_data->file_size;
+            sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
             file_data_free(current->cache_data);
         }
     }
 	if (at_capacity) return 0;
-    else return bytes_to_evict;
+    return bytes_to_evict;
 }
 
 void rlu_update(const struct request *rq)
