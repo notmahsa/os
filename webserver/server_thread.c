@@ -126,12 +126,12 @@ do_server_request(struct server *sv, int connfd)
 	}
 
     pthread_mutex_lock(&sv->cache_lock);
-    struct cache_entry * current_element = cache_lookup(sv, rq->data->file_name);
-    if (current_element != NULL){
-        assert(!strcmp(rq->data->file_name, current_element->cache_data->file_name));
-        rq->data->file_buf = strdup(current_element->cache_data->file_buf);
-        rq->data->file_size = current_element->cache_data->file_size;
-        current_element->in_use++;
+    struct cache_entry * current = cache_lookup(sv, rq->data->file_name);
+    if (current != NULL){
+        assert(!strcmp(rq->data->file_name, current->cache_data->file_name));
+        rq->data->file_buf = strdup(current->cache_data->file_buf);
+        rq->data->file_size = current->cache_data->file_size;
+        current->in_use = 1;
         exist_list_updater(rq);
     }
     else {
@@ -139,20 +139,20 @@ do_server_request(struct server *sv, int connfd)
         ret = request_readfile(rq);
         if (!ret) goto out;
         pthread_mutex_lock(&sv->cache_lock);
-        current_element = cache_lookup(sv, rq->data->file_name);
-        if (current_element == NULL) {
-            current_element = cache_insert(sv, rq);
-            if(current_element != NULL){
-                assert(!strcmp(rq->data->file_name, current_element->cache_data->file_name));
-                current_element->in_use++;
+        current = cache_lookup(sv, rq->data->file_name);
+        if (current == NULL) {
+            current = cache_insert(sv, rq);
+            if (current != NULL){
+                assert(!strcmp(rq->data->file_name, current->cache_data->file_name));
+                current->in_use = 1;
                 new_list_updater(rq);
             }
         }
         else {
-            assert(!strcmp(rq->data->file_name, current_element->cache_data->file_name));
-            rq->data->file_buf = strdup(current_element->cache_data->file_buf);
-            rq->data->file_size = current_element->cache_data->file_size;
-            current_element->in_use++;
+            assert(!strcmp(rq->data->file_name, current->cache_data->file_name));
+            rq->data->file_buf = strdup(current->cache_data->file_buf);
+            rq->data->file_size = current->cache_data->file_size;
+            current->in_use = 1;
             exist_list_updater(rq);
         }
     }
@@ -160,9 +160,9 @@ do_server_request(struct server *sv, int connfd)
     pthread_mutex_unlock(&sv->cache_lock);
     request_sendfile(rq);
 out:
-    if (current_element != NULL){
+    if (current != NULL){
         pthread_mutex_lock(&sv->cache_lock);
-        current_element->in_use--;
+        current->in_use--;
         pthread_mutex_unlock(&sv->cache_lock);
     }
     request_destroy(rq);
@@ -285,10 +285,10 @@ struct cache_entry * cache_lookup(struct server *sv, char* file)
     if(sv->cache->entries[hash_value]==NULL)
        	return NULL;
     else {
-    	struct cache_entry * current_element = sv->cache->entries[hash_value];
-    	while (current_element != NULL) {
-            if (!current_element->deleted && !strcmp(current_element->cache_data->file_name, file)) return current_element;
-            else current_element = current_element->next_in_ll;
+    	struct cache_entry * current = sv->cache->entries[hash_value];
+    	while (current != NULL) {
+            if (!current->deleted && !strcmp(current->cache_data->file_name, file)) return current;
+            else current = current->next_in_ll;
         }
         return NULL;
     }
@@ -322,21 +322,21 @@ cache_insert(struct server *sv, const struct request *rq)
 		return new_element;
 	}
     else {
-        struct cache_entry * current_element = sv->cache->entries[hash_value];
+        struct cache_entry * current = sv->cache->entries[hash_value];
         struct cache_entry * previous_element = NULL;
-        while (current_element != NULL) {
-            if (current_element->deleted) {
-                new_element->next_in_ll = current_element->next_in_ll;
+        while (current != NULL) {
+            if (current->deleted) {
+                new_element->next_in_ll = current->next_in_ll;
                 if (previous_element == NULL)
                 	sv->cache->entries[hash_value] = new_element;
                 else
                 	previous_element->next_in_ll = new_element;
-               free(current_element);
+               free(current);
                 return new_element;
             }
             else {
-                previous_element = current_element;
-                current_element = current_element->next_in_ll;
+                previous_element = current;
+                current = current->next_in_ll;
             }
         }
         previous_element->next_in_ll = new_element;
@@ -357,16 +357,16 @@ cache_evict(struct server *sv, int bytes_to_evict){
         }
         last_node = current_node;
     	while (bytes_to_evict > 0 && !at_capacity) {
-        	struct cache_entry * current_element = cache_lookup(sv, last_node->file);
-        	while (!at_capacity && current_element->in_use != 0){
+        	struct cache_entry * current = cache_lookup(sv, last_node->file);
+        	while (!at_capacity && current->in_use != 0){
         		last_node = last_node->prev;
-           		if (last_node != NULL) current_element = cache_lookup(sv, last_node->file);
+           		if (last_node != NULL) current = cache_lookup(sv, last_node->file);
         		else at_capacity = 1;
         	}
 
         	if (!at_capacity) {
-        		bytes_to_evict -= current_element->cache_data->file_size;
-        		sv->cache_size_used = sv->cache_size_used - current_element->cache_data->file_size;
+        		bytes_to_evict -= current->cache_data->file_size;
+        		sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
         		if (last_node->prev != NULL){
 					last_node->prev->next = last_node->next;
 					if(last_node->next!=NULL) last_node->next->prev = last_node->prev;
@@ -379,9 +379,9 @@ cache_evict(struct server *sv, int bytes_to_evict){
 				struct rlu_table * temp = last_node;
 				last_node = last_node->prev;
         		free(temp);
-        		current_element->deleted = 1;
-        		file_data_free(current_element->cache_data);
-        		current_element->cache_data = NULL;
+        		current->deleted = 1;
+        		file_data_free(current->cache_data);
+        		current->cache_data = NULL;
         	}
     	}
     }
