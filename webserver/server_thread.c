@@ -220,6 +220,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 
     sv->buff_in = 0;
     sv->buff_out = 0;
+    sv->cache = NULL;
 
     if (nr_threads > 0 || max_requests > 0 || max_cache_size > 0){
         if (nr_threads > 0){
@@ -235,11 +236,8 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
         if (max_cache_size > 0){
             sv->cache = (struct cache_table *)malloc(sizeof(struct cache_table));
             sv->cache->table_size = max_cache_size;
-            sv->cache->entries = (struct cache_entry **)malloc(sizeof(struct cache_entry *) * max_cache_size);
-            for(int i = 0; i < sv->cache->table_size; i++) sv->cache->entries[i] = NULL;
-        }
-        else {
-            sv->cache = NULL;
+            sv->cache->entries = (struct cache_entry **)malloc(max_cache_size * sizeof(struct cache_entry *));
+            for (int i = 0; i < sv->cache->table_size; i++) sv->cache->entries[i] = NULL;
         }
     }
 
@@ -278,13 +276,13 @@ server_request(struct server *sv, int connfd)
     }
 }
 
-struct cache_entry * cache_lookup(struct server *sv, char* file)
+struct cache_entry * 
+cache_lookup(struct server *sv, char* file)
 {
-	int hash_value = hash(file, sv->cache->table_size);
-    if(sv->cache->entries[hash_value]==NULL)
-       	return NULL;
+	int hash_index = hash(file, sv->cache->table_size);
+    if (sv->cache->entries[hash_index]==NULL) return NULL;
     else {
-    	struct cache_entry * current = sv->cache->entries[hash_value];
+    	struct cache_entry * current = sv->cache->entries[hash_index];
     	while (current != NULL) {
             if (!current->deleted && !strcmp(current->cache_data->file_name, file)) return current;
             else current = current->next_in_ll;
@@ -293,53 +291,51 @@ struct cache_entry * cache_lookup(struct server *sv, char* file)
     }
 }
 
-struct cache_entry*
+struct cache_entry *
 cache_insert(struct server *sv, const struct request *rq)
 {
 	if (rq->data->file_size > sv->max_cache_size) return NULL;
 	if (sv->cache_size_used + rq->data->file_size > sv->max_cache_size){
 	    int bytes_to_evict = sv->cache_size_used + rq->data->file_size - sv->max_cache_size;
-		int temp = cache_evict(sv, bytes_to_evict);
-		if (temp == 0) return NULL;
+		if (cache_evict(sv, bytes_to_evict) == 0) return NULL;
 	}
 
-	sv->cache_size_used += rq->data->file_size;
-	int hash_value = hash(rq->data->file_name, sv->cache->table_size);
-    struct cache_entry * new_element = (struct cache_entry *)malloc(sizeof(struct cache_entry));
-    assert(new_element);
+	int hash_index = hash(rq->data->file_name, sv->cache->table_size);
+    struct cache_entry * new_entry = (struct cache_entry *)malloc(sizeof(struct cache_entry));
+    assert(new_entry);
 
-    new_element->cache_data = file_data_init();
-    new_element->cache_data->file_name = strdup(rq->data->file_name);
-    new_element->cache_data->file_buf = strdup(rq->data->file_buf);
-    new_element->cache_data->file_size = rq->data->file_size;
-    new_element->in_use = 0;
-    new_element->deleted = 0;
-	new_element->next_in_ll = NULL;
+    new_entry->cache_data = file_data_init();
+    new_entry->cache_data->file_name = strdup(rq->data->file_name);
+    new_entry->cache_data->file_buf = strdup(rq->data->file_buf);
+    new_entry->cache_data->file_size = rq->data->file_size;
+    new_entry->in_use = 0;
+    new_entry->deleted = 0;
+	new_entry->next_in_ll = NULL;
+	
+	sv->cache_size_used += new_entry->cache_data->file_size;
 
-	if (sv->cache->entries[hash_value] == NULL){
-		sv->cache->entries[hash_value] = new_element;
-		return new_element;
+	if (sv->cache->entries[hash_index] == NULL){
+		sv->cache->entries[hash_index] = new_entry;
+		return new_entry;
 	}
     else {
-        struct cache_entry * current = sv->cache->entries[hash_value];
-        struct cache_entry * previous_element = NULL;
+        struct cache_entry * current = sv->cache->entries[hash_index];
+        struct cache_entry * previous = NULL;
         while (current != NULL) {
             if (current->deleted) {
-                new_element->next_in_ll = current->next_in_ll;
-                if (previous_element == NULL)
-                	sv->cache->entries[hash_value] = new_element;
-                else
-                	previous_element->next_in_ll = new_element;
-               free(current);
-                return new_element;
+                new_entry->next_in_ll = current->next_in_ll;
+                if (previous == NULL) sv->cache->entries[hash_index] = new_entry;
+                else previous->next_in_ll = new_entry;
+                free(current);
+                return new_entry;
             }
             else {
-                previous_element = current;
+                previous = current;
                 current = current->next_in_ll;
             }
         }
-        previous_element->next_in_ll = new_element;
-        return new_element;
+        previous->next_in_ll = new_entry;
+        return new_entry;
     }
 }
 
