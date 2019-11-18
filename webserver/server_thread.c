@@ -62,12 +62,8 @@ hash(char *str, long table_size)
 {
     int hash = 5381;
     int c = 0;
-    while ((c = *str++)){
-        hash = ((hash << 5) + hash) + c;
-    }
-    if(hash < 0){
-        hash *= -1;
-    }
+    while ((c = *str++)) hash = ((hash << 5) + hash) + c;
+    if(hash < 0) hash *= -1;
     hash = hash % table_size;
     return hash;
 }
@@ -139,6 +135,7 @@ do_server_request(struct server *sv, int connfd)
         if (!ret) goto out;
         pthread_mutex_lock(&sv->cache_lock);
         current = cache_lookup(sv, rq->data->file_name);
+
         if (current == NULL) {
             current = cache_insert(sv, rq);
             if (current != NULL){
@@ -158,12 +155,14 @@ do_server_request(struct server *sv, int connfd)
 
     pthread_mutex_unlock(&sv->cache_lock);
     request_sendfile(rq);
+
 out:
     if (current != NULL){
         pthread_mutex_lock(&sv->cache_lock);
         current->in_use = 0;
         pthread_mutex_unlock(&sv->cache_lock);
     }
+
     request_destroy(rq);
     file_data_free(data);
 }
@@ -446,4 +445,3 @@ void server_exit(struct server *sv)
     free(sv);
     return;
 }
-
