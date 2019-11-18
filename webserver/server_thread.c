@@ -210,7 +210,6 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
     err = pthread_mutex_init(&sv->lock, NULL);
     assert(err == 0);
 
-    int err;
     err = pthread_mutex_init(&sv->cache_lock, NULL);
     assert(err == 0);
 
