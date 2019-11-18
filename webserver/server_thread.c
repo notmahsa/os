@@ -297,9 +297,11 @@ cache_insert(struct server *sv, const struct request *rq)
 	if (rq->data->file_size > sv->max_cache_size) return NULL;
 	if (sv->cache_size_used + rq->data->file_size > sv->max_cache_size){
 	    int bytes_to_evict = sv->cache_size_used + rq->data->file_size - sv->max_cache_size;
-		if (cache_evict(sv, bytes_to_evict) == 0) return NULL;
+		int temp = cache_evict(sv, bytes_to_evict);
+		if (temp == 0) return NULL;
 	}
 
+	sv->cache_size_used += rq->data->file_size;
 	int hash_index = hash(rq->data->file_name, sv->cache->table_size);
     struct cache_entry * new_entry = (struct cache_entry *)malloc(sizeof(struct cache_entry));
     assert(new_entry);
@@ -311,8 +313,6 @@ cache_insert(struct server *sv, const struct request *rq)
     new_entry->in_use = 0;
     new_entry->deleted = 0;
 	new_entry->next_in_ll = NULL;
-	
-	sv->cache_size_used += new_entry->cache_data->file_size;
 
 	if (sv->cache->entries[hash_index] == NULL){
 		sv->cache->entries[hash_index] = new_entry;
@@ -320,21 +320,23 @@ cache_insert(struct server *sv, const struct request *rq)
 	}
     else {
         struct cache_entry * current = sv->cache->entries[hash_index];
-        struct cache_entry * previous = NULL;
+        struct cache_entry * previous_element = NULL;
         while (current != NULL) {
             if (current->deleted) {
                 new_entry->next_in_ll = current->next_in_ll;
-                if (previous == NULL) sv->cache->entries[hash_index] = new_entry;
-                else previous->next_in_ll = new_entry;
-                free(current);
+                if (previous_element == NULL)
+                	sv->cache->entries[hash_index] = new_entry;
+                else
+                	previous_element->next_in_ll = new_entry;
+               free(current);
                 return new_entry;
             }
             else {
-                previous = current;
+                previous_element = current;
                 current = current->next_in_ll;
             }
         }
-        previous->next_in_ll = new_entry;
+        previous_element->next_in_ll = new_entry;
         return new_entry;
     }
 }
