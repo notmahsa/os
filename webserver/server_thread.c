@@ -895,7 +895,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
 
         	if (!at_capacity) {
         		bytes_to_evict -= current_element->cache_file->file_size;
-        		sv->cache_size_counter = sv->cache_size_counter - current_element->cach_file->file_size;
+        		sv->cache_size_counter = sv->cache_size_counter - current_element->cache_file->file_size;
         		if (last_node->prev != NULL){
 					last_node->prev->next = last_node->next;
 					if(last_node->next!=NULL) last_node->next->prev = last_node->prev;
