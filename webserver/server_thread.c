@@ -536,6 +536,11 @@
 #include "common.h"
 #include <pthread.h>
 
+struct request {
+	int fd;		 /* descriptor for client connection */
+	struct file_data *data;
+};
+
 struct cache_entry
 {
     struct file_data * cache_file;
