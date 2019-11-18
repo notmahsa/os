@@ -811,7 +811,7 @@ server_request(struct server *sv, int connfd)
 struct cache_entry * cache_lookup(struct server *sv, char* file)
 {
 	int hash_value = hash(file, sv->cache->table_size);
-    if(sv->cache->hash_element[hash_value]==NULL)
+    if(sv->cache->entries[hash_value]==NULL)
        	return NULL;
     else {
     	struct cache_entry * current_element = sv->cache->entries[hash_value];
@@ -846,8 +846,8 @@ cache_insert(struct server *sv, const struct request *rq)
     new_element->deleted = 0;
 	new_element->next_conflict_element = NULL;
 
-	if (sv->cache->hash_element[hash_value] == NULL){
-		sv->cache->hash_element[hash_value] = new_element;
+	if (sv->cache->entries[hash_value] == NULL){
+		sv->cache->entries[hash_value] = new_element;
 		return new_element;
 	}
     else {
@@ -857,7 +857,7 @@ cache_insert(struct server *sv, const struct request *rq)
             if (current_element->deleted) {
                 new_element->next_conflict_element = current_element->next_conflict_element;
                 if (previous_element == NULL)
-                	sv->cache->hash_element[hash_value] = new_element;
+                	sv->cache->entries[hash_value] = new_element;
                 else
                 	previous_element->next_conflict_element = new_element;
                free(current_element);
@@ -875,7 +875,8 @@ cache_insert(struct server *sv, const struct request *rq)
 
 int
 cache_evict(struct server *sv, int bytes_to_evict){
-	if (rlu_file_list == NULL)
+    int at_capacity = 0;
+	if (rlu_table == NULL)
         assert(0);
     else {
     	struct rlu_table * current_node = rlu_table;
@@ -884,7 +885,6 @@ cache_evict(struct server *sv, int bytes_to_evict){
             current_node = current_node->next;
         }
         last_node = current_node;
-        int at_capacity = 0;
     	while (bytes_to_evict > 0 && !at_capacity) {
         	struct cache_entry * current_element = cache_lookup(sv, last_node->file);
         	while (!at_capacity && current_element->transmitting != 0){
@@ -895,7 +895,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
 
         	if (!at_capacity) {
         		bytes_to_evict -= current_element->cache_file->file_size;
-        		cache_size_counter = cache_size_counter - current_element->cach_file->file_size;
+        		sv->cache_size_counter = sv->cache_size_counter - current_element->cach_file->file_size;
         		if (last_node->prev != NULL){
 					last_node->prev->next = last_node->next;
 					if(last_node->next!=NULL) last_node->next->prev = last_node->prev;
@@ -914,7 +914,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
         	}
     	}
     }
-	if(at_capacity) return 0;
+	if (at_capacity) return 0;
     else return bytes_to_evict;
 }
 
