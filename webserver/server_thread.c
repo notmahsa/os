@@ -343,13 +343,13 @@ cache_insert(struct server *sv, const struct request *rq)
 int
 cache_evict(struct server *sv, int bytes_to_evict){
     int at_capacity = 0;
-    struct rlu_table * current = rlu_table;
-    if (!current) return 0;
-    struct rlu_table * last = NULL;
-    while(current->next != NULL){
-        current = current->next;
+    // struct rlu_table * current = rlu_table;
+    struct rlu_table * last = rlu_table;
+    if (last == NULL) return 0;
+    while(last->next != NULL){
+        last = last->next;
     }
-    last = current;
+    // last = current;
     while (bytes_to_evict > 0 && !at_capacity) {
         struct cache_entry * current = cache_lookup(sv, last->file);
         while (!at_capacity && current->in_use != 0){
