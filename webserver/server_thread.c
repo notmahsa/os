@@ -162,7 +162,7 @@ do_server_request(struct server *sv, int connfd)
 out:
     if (current != NULL){
         pthread_mutex_lock(&sv->cache_lock);
-        current->in_use--;
+        current->in_use = 0;
         pthread_mutex_unlock(&sv->cache_lock);
     }
     request_destroy(rq);
