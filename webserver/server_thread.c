@@ -327,6 +327,7 @@ cache_insert(struct server *sv, const struct request *rq)
                 new_entry->next_in_ll = current->next_in_ll;
                 if (previous == NULL) sv->cache->entries[hash_index] = new_entry;
                 else previous->next_in_ll = new_entry;
+                file_data_free(current->cache_data);
                 free(current);
                 return new_entry;
             }
