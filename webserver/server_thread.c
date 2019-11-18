@@ -129,7 +129,7 @@ do_server_request(struct server *sv, int connfd)
     struct cache_entry * current_element = cache_lookup(sv, rq->data->file_name);
     if (current_element != NULL){
         assert(!strcmp(rq->data->file_name, current_element->cache_data->file_name));
-        rq->data->file_buf = current_element->cache_data->file_buf;
+        rq->data->file_buf = strdup(current_element->cache_data->file_buf);
         rq->data->file_size = current_element->cache_data->file_size;
         current_element->in_use++;
         exist_list_updater(rq);
@@ -150,8 +150,7 @@ do_server_request(struct server *sv, int connfd)
         }
         else {
             assert(!strcmp(rq->data->file_name, current_element->cache_data->file_name));
-            rq->data->file_buf = current_element->cache_data->file_buf
-            ;
+            rq->data->file_buf = strdup(current_element->cache_data->file_buf);
             rq->data->file_size = current_element->cache_data->file_size;
             current_element->in_use++;
             exist_list_updater(rq);
@@ -311,8 +310,8 @@ cache_insert(struct server *sv, const struct request *rq)
     assert(new_element);
 
     new_element->cache_data = file_data_init();
-    new_element->cache_data->file_name = rq->data->file_name;
-    new_element->cache_data->file_buf = rq->data->file_buf;
+    new_element->cache_data->file_name = strdup(rq->data->file_name);
+    new_element->cache_data->file_buf = strdup(rq->data->file_buf);
     new_element->cache_data->file_size = rq->data->file_size;
     new_element->in_use = 0;
     new_element->deleted = 0;
@@ -415,7 +414,7 @@ void new_list_updater(const struct request *rq)
 	if(!rlu_table) {
 		rlu_table = (struct rlu_table*)malloc(sizeof(struct rlu_table));
 		assert(rlu_table);
-		rlu_table->file = rq->data->file_name;
+		rlu_table->file = strdup(rq->data->file_name);
 		rlu_table->next = NULL;
 		rlu_table->prev = NULL;
 	}
@@ -423,7 +422,7 @@ void new_list_updater(const struct request *rq)
 	{
 		struct rlu_table * new_node = (struct rlu_table *)malloc(sizeof(rlu_table));
 		assert(new_node);
-		new_node->file = rq->data->file_name;
+		new_node->file = strdup(rq->data->file_name);
 		assert(new_node->file);
 		rlu_table->prev = new_node;
 		new_node->next = rlu_table;
