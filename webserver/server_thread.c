@@ -635,7 +635,6 @@ do_server_request(struct server *sv, int connfd)
 	int ret;
 	struct request *rq;
 	struct file_data *data;
-	struct cache_entry * cache_fd;
 
 	data = file_data_init();
 
