@@ -344,7 +344,7 @@ int
 cache_evict(struct server *sv, int bytes_to_evict){
     int at_capacity = 0;
     struct rlu_table * current = rlu_table;
-    if (!current) return;
+    if (!current) return 0;
     struct rlu_table * last = NULL;
     while(current->next != NULL){
         current = current->next;
