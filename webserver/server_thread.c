@@ -357,8 +357,6 @@ cache_evict(struct server *sv, int bytes_to_evict){
         }
         // Variable "last" here marks the last file in the LRU table, that is not in use.
         if (!at_capacity) {
-            bytes_to_evict -= current->cache_data->file_size;
-            sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
             if (last->prev != NULL){
                 last->prev->next = last->next;
                 if(last->next!=NULL) last->next->prev = last->prev;
@@ -368,9 +366,11 @@ cache_evict(struct server *sv, int bytes_to_evict){
                 at_capacity = 1;
                 if (last->next != NULL) last->next->prev = NULL;
             }
-            struct rlu_table * temp = last;
-            last = last->prev;
-            free(temp);
+            bytes_to_evict -= current->cache_data->file_size;
+            sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
+            struct rlu_table * temp = last->prev;
+            free(last);
+            last = temp;
             current->deleted = 1;
             file_data_free(current->cache_data);
             current->cache_data = NULL;
