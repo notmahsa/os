@@ -55,7 +55,7 @@ struct cache_table * cache_init(long size);
 struct cache_entry * cache_lookup(struct server *sv, char *file);
 struct cache_entry * cache_insert(struct server *sv, const struct request *rq);
 int cache_evict(struct server *sv, int bytes_to_evict);
-void rlu_update(const struct request *rq);
+void rlu_update(struct server *sv, const struct request *rq);
 
 int
 hash(char *str, long table_size)
@@ -131,7 +131,7 @@ do_server_request(struct server *sv, int connfd)
         rq->data->file_size = current->cache_data->file_size;
         rq->data->file_buf = strdup(current->cache_data->file_buf);
         current->in_use = 1;
-        rlu_update(rq);
+        rlu_update(sv, rq);
     }
     else {
         pthread_mutex_unlock(&sv->cache_lock);
@@ -144,7 +144,7 @@ do_server_request(struct server *sv, int connfd)
             if (current != NULL){
                 assert(!strcmp(rq->data->file_name, current->cache_data->file_name));
                 current->in_use = 1;
-                rlu_update(rq);
+                rlu_update(sv, rq);
             }
         }
         else {
@@ -152,7 +152,7 @@ do_server_request(struct server *sv, int connfd)
             rq->data->file_buf = strdup(current->cache_data->file_buf);
             rq->data->file_size = current->cache_data->file_size;
             current->in_use = 1;
-            rlu_update(rq);
+            rlu_update(sv, rq);
         }
     }
 
@@ -383,7 +383,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
     return bytes_to_evict;
 }
 
-void rlu_update(const struct request *rq)
+void rlu_update(struct server *sv, const struct request *rq)
 {
     struct rlu_table * current = sv->rlu_table;
     while (current){
@@ -410,7 +410,7 @@ void rlu_update(const struct request *rq)
 		return;
 	}
 
-    struct rlu_table * new_rlu_entry = (struct rlu_table *)malloc(sizeof(rlu_table));
+    struct rlu_table * new_rlu_entry = (struct rlu_table *)malloc(sizeof(struct rlu_table));
     new_rlu_entry->file = strdup(rq->data->file_name);
     new_rlu_entry->next = sv->rlu_table;
     new_rlu_entry->prev = NULL;
