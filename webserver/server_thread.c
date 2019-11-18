@@ -343,35 +343,35 @@ cache_insert(struct server *sv, const struct request *rq)
 int
 cache_evict(struct server *sv, int bytes_to_evict){
     int at_capacity = 0;
-	if (rlu_table == NULL) assert(0);
     struct rlu_table * current = rlu_table;
-    struct rlu_table * last_node = NULL;
+    if (!current) return;
+    struct rlu_table * last = NULL;
     while(current->next != NULL){
         current = current->next;
     }
-    last_node = current;
+    last = current;
     while (bytes_to_evict > 0 && !at_capacity) {
-        struct cache_entry * current = cache_lookup(sv, last_node->file);
+        struct cache_entry * current = cache_lookup(sv, last->file);
         while (!at_capacity && current->in_use != 0){
-            last_node = last_node->prev;
-            if (last_node != NULL) current = cache_lookup(sv, last_node->file);
+            last = last->prev;
+            if (last != NULL) current = cache_lookup(sv, last->file);
             else at_capacity = 1;
         }
 
         if (!at_capacity) {
             bytes_to_evict -= current->cache_data->file_size;
             sv->cache_size_used = sv->cache_size_used - current->cache_data->file_size;
-            if (last_node->prev != NULL){
-                last_node->prev->next = last_node->next;
-                if(last_node->next!=NULL) last_node->next->prev = last_node->prev;
+            if (last->prev != NULL){
+                last->prev->next = last->next;
+                if(last->next!=NULL) last->next->prev = last->prev;
             }
             else {
-                rlu_table = last_node->next;
+                rlu_table = last->next;
                 at_capacity = 1;
-                if (last_node->next != NULL) last_node->next->prev = NULL;
+                if (last->next != NULL) last->next->prev = NULL;
             }
-            struct rlu_table * temp = last_node;
-            last_node = last_node->prev;
+            struct rlu_table * temp = last;
+            last = last->prev;
             free(temp);
             current->deleted = 1;
             file_data_free(current->cache_data);
