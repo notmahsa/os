@@ -540,7 +540,7 @@ struct cache_entry
 {
     struct file_data * cache_file;
     int transmitting;
-    bool deleted;
+    int deleted;
     struct cache_entry * next_conflict_element;
 };
 
@@ -839,7 +839,7 @@ cache_insert(struct server *sv, const struct request *rq)
     new_element->cache_file->file_buf = strdup(rq->data->file_buf);
     new_element->cache_file->file_size = rq->data->file_size;
     new_element->transmitting = 0;
-    new_element->deleted = false;
+    new_element->deleted = 0;
 	new_element->next_conflict_element = NULL;
 
 	if (sv->cache->hash_element[hash_value] == NULL){
@@ -904,7 +904,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
 				struct rlu_table * temp = last_node;
 				last_node = last_node->prev;
         		free(temp);
-        		current_element->deleted = true;
+        		current_element->deleted = 1;
         		file_data_free(current_element->cache_file);
         		current_element->cache_file = NULL;
         	}
