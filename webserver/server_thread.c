@@ -385,11 +385,11 @@ cache_evict(struct server *sv, int bytes_to_evict){
 void rlu_update(const struct request *rq)
 {
     struct rlu_table * current = rlu_table;
-    while (current != NULL){
+    while (current){
         if (!strcmp(current->file, rq->data->file_name)){
-            if (current->prev != NULL){
+            if (current->prev){
                 current->prev->next = current->next;
-                if (current->next != NULL) current->next->prev = current->prev;
+                if (current->next) current->next->prev = current->prev;
                 current->next = rlu_table;
                 rlu_table->prev = current;
                 rlu_table = current;
@@ -399,23 +399,23 @@ void rlu_update(const struct request *rq)
         }
         current = current->next;
     }
+
 	if (!rlu_table){
 		rlu_table = (struct rlu_table*)malloc(sizeof(struct rlu_table));
 		assert(rlu_table);
 		rlu_table->file = strdup(rq->data->file_name);
 		rlu_table->next = NULL;
 		rlu_table->prev = NULL;
+		return;
 	}
-	else {
-		struct rlu_table * new_node = (struct rlu_table *)malloc(sizeof(rlu_table));
-		assert(new_node);
-		new_node->file = strdup(rq->data->file_name);
-		assert(new_node->file);
-		rlu_table->prev = new_node;
-		new_node->next = rlu_table;
-		new_node->prev = NULL;
-		rlu_table = new_node;
-	}
+
+    struct rlu_table * new_rlu_entry = (struct rlu_table *)malloc(sizeof(rlu_table));
+    new_rlu_entry->file = strdup(rq->data->file_name);
+    new_rlu_entry->next = rlu_table;
+    new_rlu_entry->prev = NULL;
+
+    rlu_table->prev = new_rlu_entry;
+    rlu_table = new_rlu_entry;
 }
 
 void server_exit(struct server *sv)
