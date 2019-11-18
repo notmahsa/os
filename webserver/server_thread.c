@@ -349,14 +349,10 @@ cache_evict(struct server *sv, int bytes_to_evict){
         last = last->next;
     }
     while (bytes_to_evict > 0 && !at_capacity) {
-    // Some in_use files may be done reading, but we step over them right now, and never check again.
-    // May need to acquire lock.
         struct cache_entry * current = cache_lookup(sv, last->file);
-        while (!at_capacity && current->in_use != 0){\
-            if (last->prev){
-                last = last->prev;
-                current = cache_lookup(sv, last->file);
-            }
+        while (!at_capacity && current->in_use != 0){
+            last = last->prev;
+            if (last != NULL) current = cache_lookup(sv, last->file);
             else at_capacity = 1;
         }
         // Variable "last" here marks the last file in the LRU table, that is not in use.
