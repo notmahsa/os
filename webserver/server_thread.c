@@ -889,7 +889,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
         	struct cache_entry * current_element = cache_lookup(sv, last_node->file);
         	while (!at_capacity && current_element->transmitting != 0){
         		last_node = last_node->prev;
-           		if (last_node != NULL) current_element = cache_lookup(sv, last_node->cache_file_name);
+           		if (last_node != NULL) current_element = cache_lookup(sv, last_node->file);
         		else at_capacity = 1;
         	}
 
