@@ -359,7 +359,7 @@ cache_evict(struct server *sv, int bytes_to_evict){
         if (!at_capacity) {
             if (last->prev != NULL){
                 last->prev->next = last->next;
-                if(last->next!=NULL) last->next->prev = last->prev;
+                if (last->next != NULL) last->next->prev = last->prev;
             }
             else {
                 rlu_table = last->next;
@@ -373,7 +373,6 @@ cache_evict(struct server *sv, int bytes_to_evict){
             last = temp;
             current->deleted = 1;
             file_data_free(current->cache_data);
-            current->cache_data = NULL;
         }
     }
 	if (at_capacity) return 0;
