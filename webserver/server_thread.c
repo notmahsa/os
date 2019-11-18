@@ -46,6 +46,7 @@ struct server {
     int buff_out;
 
     struct cache_table * cache;
+    pthread_mutex_t cache_lock;
     int cache_size_used;
 };
 
@@ -124,7 +125,7 @@ do_server_request(struct server *sv, int connfd)
         return;
 	}
 
-    pthread_mutex_lock(&sv->lock);
+    pthread_mutex_lock(&sv->cache_lock);
     struct cache_entry * current_element = cache_lookup(sv, rq->data->file_name);
     if (current_element != NULL){
         assert(!strcmp(rq->data->file_name, current_element->cache_data->file_name));
@@ -134,10 +135,10 @@ do_server_request(struct server *sv, int connfd)
         exist_list_updater(rq);
     }
     else {
-        pthread_mutex_unlock(&sv->lock);
+        pthread_mutex_unlock(&sv->cache_lock);
         ret = request_readfile(rq);
         if (!ret) goto out;
-        pthread_mutex_lock(&sv->lock);
+        pthread_mutex_lock(&sv->cache_lock);
         current_element = cache_lookup(sv, rq->data->file_name);
         if (current_element == NULL) {
             current_element = cache_insert(sv, rq);
@@ -156,13 +157,13 @@ do_server_request(struct server *sv, int connfd)
         }
     }
 
-    pthread_mutex_unlock(&sv->lock);
+    pthread_mutex_unlock(&sv->cache_lock);
     request_sendfile(rq);
 out:
     if (current_element != NULL){
-        pthread_mutex_lock(&sv->lock);
+        pthread_mutex_lock(&sv->cache_lock);
         current_element->in_use--;
-        pthread_mutex_unlock(&sv->lock);
+        pthread_mutex_unlock(&sv->cache_lock);
     }
     request_destroy(rq);
     file_data_free(data);
@@ -207,6 +208,10 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 
     int err;
     err = pthread_mutex_init(&sv->lock, NULL);
+    assert(err == 0);
+
+    int err;
+    err = pthread_mutex_init(&sv->cache_lock, NULL);
     assert(err == 0);
 
     err = pthread_cond_init(&sv->full, NULL);
