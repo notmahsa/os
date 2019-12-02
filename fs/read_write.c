@@ -15,7 +15,6 @@ static int
 testfs_read_block(struct inode *in, int log_block_nr, char *block)
 {
 	int phy_block_nr = 0;
-
 	assert(log_block_nr >= 0);
 	if (log_block_nr >= MAX_BLOCK_NR) return -EFBIG;
 
@@ -25,7 +24,7 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
 	else {
 		log_block_nr -= NR_DIRECT_BLOCKS;
 		if (log_block_nr >= NR_INDIRECT_BLOCKS){
-		    if (in->in.i_dindirect > 0) {
+		    if (in->in.i_dindirect > 0){
                 read_blocks(in->sb, block, in->in.i_dindirect, 1);
                 log_block_nr -= NR_INDIRECT_BLOCKS;
                 int ind_block_nr = ((int *)block)[log_block_nr / NR_INDIRECT_BLOCKS];
@@ -34,14 +33,15 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
                 phy_block_nr = ((int *)block)[log_block_nr % NR_INDIRECT_BLOCKS];
             }
         }
-		else if (in->in.i_indirect > 0) {
+		else if (in->in.i_indirect > 0){
 			read_blocks(in->sb, block, in->in.i_indirect, 1);
 			phy_block_nr = ((int *)block)[log_block_nr];
 		}
 	}
-	if (phy_block_nr > 0) {
+	if (phy_block_nr > 0){
 		read_blocks(in->sb, block, phy_block_nr, 1);
-	} else {
+	}
+	else {
 		/* we support sparse files by zeroing out a block that is not
 		 * allocated on disk. */
 		bzero(block, BLOCK_SIZE);
@@ -62,7 +62,7 @@ testfs_read_data(struct inode *in, char *buf, off_t start, size_t size)
 	if (start + (off_t) size > in->in.i_size) {
 		size = in->in.i_size - start;
 	}
-	while (block_ix + ((int)size - bytes_read) > BLOCK_SIZE) {
+	while (block_ix + (size - bytes_read) > BLOCK_SIZE) {
         if ((ret = testfs_read_block(in, block_nr, block)) < 0) return ret;
         memcpy(buf + bytes_read, block + block_ix, BLOCK_SIZE - block_ix);
         bytes_read += BLOCK_SIZE - block_ix;
