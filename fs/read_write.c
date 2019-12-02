@@ -136,20 +136,20 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
             read_blocks(in->sb, dindirect, in->in.i_dindirect, 1);
         }
 
-        // if (((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] == 0){
-        bzero(indirect, BLOCK_SIZE);
-        phy_block_nr = testfs_alloc_block_for_inode(in);
-        if (phy_block_nr < 0) {
-            if (phy_block_nr == -ENOSPC){
-                if (dindirect_allocated)
-                    testfs_free_block_from_inode(in, in->in.i_dindirect);
+        if (((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] == 0){
+            bzero(indirect, BLOCK_SIZE);
+            phy_block_nr = testfs_alloc_block_for_inode(in);
+            if (phy_block_nr < 0) {
+                if (phy_block_nr == -ENOSPC){
+                    if (dindirect_allocated)
+                        testfs_free_block_from_inode(in, in->in.i_dindirect);
+                }
+                return phy_block_nr;
             }
-            return phy_block_nr;
-        }
 
-        ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] = phy_block_nr;
-        write_blocks(in->sb, dindirect, in->in.i_dindirect, 1);
-        dindirect_indirect_allocated = 1;
+            ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] = phy_block_nr;
+            write_blocks(in->sb, dindirect, in->in.i_dindirect, 1);
+            dindirect_indirect_allocated = 1;
         }
 //        else
 //            read_blocks(in->sb, indirect, ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS], 1);
