@@ -251,11 +251,11 @@ testfs_free_blocks(struct inode *in)
 	/* remove indirect blocks */
 	if (in->in.i_indirect > 0) {
 		char block[BLOCK_SIZE];
-		// assert(e_block_nr > 0);
+		assert(e_block_nr > 0);
 		read_blocks(in->sb, block, in->in.i_indirect, 1);
 		for (i = 0; i < e_block_nr && i < NR_INDIRECT_BLOCKS; i++) {
-			// if (((int *)block)[i] == 0)
-			// 	continue;
+			if (((int *)block)[i] == 0)
+				continue;
 			testfs_free_block_from_inode(in, ((int *)block)[i]);
 			((int *)block)[i] = 0;
 		}
