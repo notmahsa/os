@@ -55,15 +55,15 @@ testfs_read_data(struct inode *in, char *buf, off_t start, size_t size)
 	char block[BLOCK_SIZE];
 	long block_nr = start / BLOCK_SIZE; // logical block number in the file
 	long block_ix = start % BLOCK_SIZE; //  index or offset in the block
-	int ret;
 	int bytes_read = 0;
+	int ret;
 
 	assert(buf);
 	if (start + (off_t) size > in->in.i_size) {
 		size = in->in.i_size - start;
 	}
 
-	if (block_ix + size > BLOCK_SIZE) {
+	while (block_ix + size - bytes_read > BLOCK_SIZE) {
         if ((ret = testfs_read_block(in, block_nr, block)) < 0) return ret;
         memcpy(buf + bytes_read, block + block_ix, BLOCK_SIZE - block_ix);
         bytes_read += BLOCK_SIZE - block_ix;
@@ -74,7 +74,7 @@ testfs_read_data(struct inode *in, char *buf, off_t start, size_t size)
     if ((ret = testfs_read_block(in, block_nr, block)) < 0)
         return ret;
     memcpy(buf + bytes_read, block + block_ix, size - bytes_read);
-	bytes_read += size-bytes_read;
+	bytes_read += size - bytes_read;
 	/* return the number of bytes read or any error */
 	return bytes_read;
 }
