@@ -65,7 +65,7 @@ testfs_read_data(struct inode *in, char *buf, off_t start, size_t size)
 
 	while (block_ix + size - bytes_read > BLOCK_SIZE) {
         if ((ret = testfs_read_block(in, block_nr, block)) < 0) return ret;
-        memcpy(buf + bytes_read, block + block_ix, BLOCK_SIZE - block_ix - size + bytes_read);
+        memcpy(buf + bytes_read, block + block_ix, BLOCK_SIZE - block_ix - size + bytes_read + 1);
         bytes_read += BLOCK_SIZE - block_ix;
         block_ix = 0;
         block_nr++;
