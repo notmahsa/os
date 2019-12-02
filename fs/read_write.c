@@ -63,12 +63,18 @@ testfs_read_data(struct inode *in, char *buf, off_t start, size_t size)
 		size = in->in.i_size - start;
 	}
 
-	while (block_ix + size - bytes_read > BLOCK_SIZE) {
-        if ((ret = testfs_read_block(in, block_nr, block)) < 0) return ret;
-        memcpy(buf + bytes_read, block + block_ix, BLOCK_SIZE - block_ix);
-        bytes_read += BLOCK_SIZE - block_ix;
-        block_ix = 0;
-        block_nr++;
+	if (block_ix + size > BLOCK_SIZE) {
+	    long ext_block_nr = block_nr + 1;
+	    long ext_block_ix = 0;
+	    int to_read = size + block_ix - BLOCK_SIZE;
+	    while (block_ix + size - bytes_read > BLOCK_SIZE && to_read > 0) {
+            if ((ret = testfs_read_block(in, block_nr, block)) < 0) return ret;
+            memcpy(buf + BLOCK_SIZE - block_ix + BLOCK_SIZE * (ext_block_nr - block_nr - 1), block + ext_block_ix, to_read);
+            bytes_read += BLOCK_SIZE - block_ix;
+            ext_block_ix = 0;
+            ext_block_nr++;
+            to_read -= BLOCK_SIZE;
+        }
     }
 
     if ((ret = testfs_read_block(in, block_nr, block)) < 0)
