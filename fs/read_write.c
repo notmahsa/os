@@ -16,7 +16,7 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
 
 	assert(log_block_nr >= 0);
 
-	if (log_block_nr >= MAX_BLOCK_NR)
+	if (log_block_nr >= NR_DIRECT_BLOCKS + NR_INDIRECT_BLOCKS + (NR_INDIRECT_BLOCKS * NR_INDIRECT_BLOCKS))
 	    return -EFBIG;
 
 	if (log_block_nr < NR_DIRECT_BLOCKS) {
