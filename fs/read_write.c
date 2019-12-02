@@ -32,7 +32,7 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
                 ind_block_nr = ((int *)block)[log_block_nr / NR_INDIRECT_BLOCKS];
                 if (ind_block_nr == 0) return 0;
                 read_blocks(in->sb, block, ind_block_nr, 1);
-                phy_block_nr = ((int *)block)[ind_block_nr % NR_INDIRECT_BLOCKS];
+                phy_block_nr = ((int *)block)[log_block_nr % NR_INDIRECT_BLOCKS];
             }
         }
 		else if (in->in.i_indirect > 0) {
