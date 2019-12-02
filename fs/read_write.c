@@ -15,7 +15,6 @@ static int
 testfs_read_block(struct inode *in, int log_block_nr, char *block)
 {
 	int phy_block_nr = 0;
-	int ind_block_nr = 0;
 
 	assert(log_block_nr >= 0);
 	if (log_block_nr >= MAX_BLOCK_NR) return -EFBIG;
@@ -29,7 +28,7 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
 		    if (in->in.i_dindirect > 0) {
                 read_blocks(in->sb, block, in->in.i_dindirect, 1);
                 log_block_nr -= NR_INDIRECT_BLOCKS;
-                ind_block_nr = ((int *)block)[log_block_nr / NR_INDIRECT_BLOCKS];
+                int ind_block_nr = ((int *)block)[log_block_nr / NR_INDIRECT_BLOCKS];
                 if (ind_block_nr == 0) return 0;
                 read_blocks(in->sb, block, ind_block_nr, 1);
                 phy_block_nr = ((int *)block)[log_block_nr % NR_INDIRECT_BLOCKS];
