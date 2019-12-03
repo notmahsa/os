@@ -143,7 +143,7 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
                 return phy_block_nr;
             }
 
-            dindirect[log_block_nr / NR_INDIRECT_BLOCKS] = phy_block_nr;
+            ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] = phy_block_nr;
             write_blocks(in->sb, dindirect, in->in.i_dindirect, 1);
             dindirect_indirect_allocated = 1;
         }
