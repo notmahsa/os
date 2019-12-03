@@ -150,7 +150,6 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
     }
 
 	/* allocate direct block */
-	// assert(((int *)indirect)[log_block_nr] == 0);
 	phy_block_nr = testfs_alloc_block_for_inode(in);
 	if (phy_block_nr < 0) {
         if (indirect_allocated)
@@ -175,6 +174,7 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
             /* there was an error while allocating the direct block,
              * free the indirect block that was previously allocated */
 	        testfs_free_block_from_inode(in, in->in.i_indirect);
+	        in->in.i_indirect = 0;
 	    }
 	}
 	else {
@@ -186,6 +186,7 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
 	    }
 	    else if (dindirect_allocated){
 		    testfs_free_block_from_inode(in,in->in.i_dindirect);
+		    in->in.i_dindirect = 0;
 	    }
 	}
 	return phy_block_nr;
