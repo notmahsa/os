@@ -140,7 +140,7 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
             bzero(indirect, BLOCK_SIZE);
             phy_block_nr = testfs_alloc_block_for_inode(in);
             if (phy_block_nr < 0) {
-                if (phy_block_nr == -ENOSPC && dindirect_allocated){
+                if (dindirect_allocated){
                     testfs_free_block_from_inode(in, in->in.i_dindirect);
                 }
                 return phy_block_nr;
