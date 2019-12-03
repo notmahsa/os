@@ -199,14 +199,14 @@ testfs_write_data(struct inode *in, const char *buf, off_t start, size_t size)
 	char block[BLOCK_SIZE];
 	long block_nr = start / BLOCK_SIZE; // logical block number in the file
 	long block_ix = start % BLOCK_SIZE; //  index or offset in the block
-	int ret;
 	int bytes_written = 0;
+	int ret;
 
-    while (block_ix + ((int)size-bytes_written) > BLOCK_SIZE) {
+    while (block_ix + size - bytes_written > BLOCK_SIZE) {
         ret = testfs_allocate_block(in, block_nr, block);
         if (ret < 0) {
-          if(ret == -EFBIG)
-              in->in.i_size = MAX(in->in.i_size, start + (off_t)bytes_written);
+//          if (ret == -EFBIG)
+//              in->in.i_size = MAX(in->in.i_size, start + (off_t)bytes_written);
           return ret;
         }
         memcpy(block + block_ix, buf + bytes_written, BLOCK_SIZE - block_ix);
@@ -215,7 +215,6 @@ testfs_write_data(struct inode *in, const char *buf, off_t start, size_t size)
         block_ix = 0;
         block_nr++;
     }
-
     /* ret is the newly allocated physical block number */
     ret = testfs_allocate_block(in, block_nr, block);
     if (ret < 0) {
