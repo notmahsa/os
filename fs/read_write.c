@@ -263,21 +263,21 @@ testfs_free_blocks(struct inode *in)
 	e_block_nr -= NR_INDIRECT_BLOCKS;
 	/* handle double indirect blocks */
     if (in->in.i_dindirect > 0){
-        char i_block[BLOCK_SIZE];
-        char d_block[BLOCK_SIZE];
-
-        read_blocks(in->sb, d_block, in->in.i_dindirect, 1);
-        for (i = 0; i <= e_block_nr/NR_INDIRECT_BLOCKS && i < NR_INDIRECT_BLOCKS; i++){
-            if (((int *)d_block)[i] > 0){
-                read_blocks(in->sb, i_block, ((int *)d_block)[i], 1);
+        char ind_block[BLOCK_SIZE];
+        char dind_block[BLOCK_SIZE];
+        assert(e_block_nr > 0);
+        read_blocks(in->sb, dind_block, in->in.i_dindirect, 1);
+        for (i = 0; i < e_block_nr / NR_INDIRECT_BLOCKS + 1; i++){
+            if (((int *)dind_block)[i] > 0){
+                read_blocks(in->sb, ind_block, ((int *)dind_block)[i], 1);
                 for (j = 0; j + (NR_INDIRECT_BLOCKS * i) < e_block_nr && j < NR_INDIRECT_BLOCKS; j++) {
-                    if(((int *)i_block)[j] > 0){
-                        testfs_free_block_from_inode(in, ((int *)i_block)[j]);
-                        ((int *)i_block)[j] = 0;
+                    if(((int *)ind_block)[j] > 0){
+                        testfs_free_block_from_inode(in, ((int *)ind_block)[j]);
+                        ((int *)ind_block)[j] = 0;
                     }
                 }
-                testfs_free_block_from_inode(in, ((int *)d_block)[i]);
-                ((int *)d_block)[i] = 0;
+                testfs_free_block_from_inode(in, ((int *)dind_block)[i]);
+                ((int *)dind_block)[i] = 0;
             }
         }
         testfs_free_block_from_inode(in, in->in.i_dindirect);
