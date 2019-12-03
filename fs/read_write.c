@@ -148,7 +148,6 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
             dindirect_indirect_allocated = 1;
         }
         else read_blocks(in->sb, indirect, ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS], 1);
-
         log_block_nr += NR_INDIRECT_BLOCKS;
     }
 
@@ -160,29 +159,34 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
             /* there was an error while allocating the direct block,
              * free the indirect block that was previously allocated */
             testfs_free_block_from_inode(in, in->in.i_indirect);
-        if(dindirect_indirect_allocated) {
+        if (dindirect_allocated){
+            testfs_free_block_from_inode(in, in->in.i_dindirect);
+        }
+        if (dindirect_indirect_allocated){
             log_block_nr -= NR_INDIRECT_BLOCKS;
             testfs_free_block_from_inode(in, ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS]);
         }
-        if(dindirect_allocated) testfs_free_block_from_inode(in, in->in.i_dindirect);
     }
 
 	if (log_block_nr < NR_INDIRECT_BLOCKS) {
 	    if (phy_block_nr >= 0) {
+		    /* update indirect block */
 	        ((int *)indirect)[log_block_nr] = phy_block_nr;
 	        write_blocks(in->sb, indirect, in->in.i_indirect, 1);
-	    } else if (indirect_allocated) {
-	      testfs_free_block_from_inode(in, in->in.i_indirect);
+	    }  else if (indirect_allocated) {
+            /* there was an error while allocating the direct block,
+             * free the indirect block that was previously allocated */
+	        testfs_free_block_from_inode(in, in->in.i_indirect);
 	    }
 	}
 	else {
 	    log_block_nr -= NR_INDIRECT_BLOCKS;
 	    if (phy_block_nr >= 0){
-            ((int *)indirect)[log_block_nr%NR_INDIRECT_BLOCKS] = phy_block_nr;
-            write_blocks(in->sb, indirect, ((int *)dindirect)[log_block_nr/NR_INDIRECT_BLOCKS], 1);
+            ((int *)dindirect)[log_block_nr % NR_INDIRECT_BLOCKS] = phy_block_nr;
+            write_blocks(in->sb, dindirect, in->in.i_dindirect, 1);
 	    }
 	    else if (dindirect_allocated){
-		    testfs_free_block_from_inode(in,in->in.i_dindirect); //not sure about this one
+		    testfs_free_block_from_inode(in,in->in.i_dindirect);
 	    }
 	}
 	return phy_block_nr;
