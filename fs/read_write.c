@@ -229,7 +229,6 @@ int
 testfs_free_blocks(struct inode *in)
 {
 	int i;
-	int j;
 	int e_block_nr;
 
 	/* last logical block number */
@@ -270,7 +269,7 @@ testfs_free_blocks(struct inode *in)
             if (((int *)dind_block)[i] == 0)
                 continue;
             read_blocks(in->sb, ind_block, ((int *)dind_block)[i], 1);
-            for (j = 0; j < NR_INDIRECT_BLOCKS; j++) {
+            for (int j = 0; j < NR_INDIRECT_BLOCKS; j++) {
                 if (((int *)ind_block)[j] == 0)
                     continue;
                 testfs_free_block_from_inode(in, ((int *)ind_block)[j]);
