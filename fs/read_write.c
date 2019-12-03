@@ -21,20 +21,18 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
 	}
 	else {
 		log_block_nr -= NR_DIRECT_BLOCKS;
-		if (log_block_nr >= NR_INDIRECT_BLOCKS){
-		    if (in->in.i_dindirect > 0){
-                read_blocks(in->sb, block, in->in.i_dindirect, 1);
-                log_block_nr -= NR_INDIRECT_BLOCKS;
-                int ind_block_nr = ((int *)block)[log_block_nr / NR_INDIRECT_BLOCKS];
-                if (ind_block_nr == 0) return 0;
-                read_blocks(in->sb, block, ind_block_nr, 1);
-                phy_block_nr = ((int *)block)[log_block_nr % NR_INDIRECT_BLOCKS];
-            }
+		if (log_block_nr < NR_INDIRECT_BLOCKS && in->in.i_indirect > 0){
+            read_blocks(in->sb, block, in->in.i_indirect, 1);
+            phy_block_nr = ((int *)block)[log_block_nr];
         }
-		else if (in->in.i_indirect > 0){
-			read_blocks(in->sb, block, in->in.i_indirect, 1);
-			phy_block_nr = ((int *)block)[log_block_nr];
-		}
+		if (log_block_nr >= NR_INDIRECT_BLOCKS && in->in.i_dindirect > 0){
+            read_blocks(in->sb, block, in->in.i_dindirect, 1);
+            log_block_nr -= NR_INDIRECT_BLOCKS;
+            int ind_block_nr = ((int *)block)[log_block_nr / NR_INDIRECT_BLOCKS];
+            if (ind_block_nr == 0) return 0;
+            read_blocks(in->sb, block, ind_block_nr, 1);
+            phy_block_nr = ((int *)block)[log_block_nr % NR_INDIRECT_BLOCKS];
+        }
 	}
 	if (phy_block_nr > 0){
 		read_blocks(in->sb, block, phy_block_nr, 1);
