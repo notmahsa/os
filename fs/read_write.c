@@ -271,13 +271,13 @@ testfs_free_blocks(struct inode *in)
             if (((int *)dind_block)[i] > 0){
                 read_blocks(in->sb, ind_block, ((int *)dind_block)[i], 1);
                 for (j = 0; j < NR_INDIRECT_BLOCKS; j++) {
-                    if(((int *)ind_block)[j] > 0){
+                    if (((int *)ind_block)[j] > 0){
                         testfs_free_block_from_inode(in, ((int *)ind_block)[j]);
-                        ((int *)ind_block)[j] = 0;
+                        //((int *)ind_block)[j] = 0;
                     }
                 }
                 testfs_free_block_from_inode(in, ((int *)dind_block)[i]);
-                ((int *)dind_block)[i] = 0;
+                //((int *)dind_block)[i] = 0;
             }
         }
         testfs_free_block_from_inode(in, in->in.i_dindirect);
