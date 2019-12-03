@@ -136,7 +136,8 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
 
         if (((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] == 0){
             bzero(indirect, BLOCK_SIZE);
-            if ((phy_block_nr = testfs_alloc_block_for_inode(in)) < 0) {
+            phy_block_nr = testfs_alloc_block_for_inode(in);
+            if (phy_block_nr < 0) {
                 if (dindirect_allocated) testfs_free_block_from_inode(in, in->in.i_dindirect);
                 return phy_block_nr;
             }
