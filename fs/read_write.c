@@ -4,6 +4,9 @@
 #include "block.h"
 #include "inode.h"
 
+
+const int MAX_BLOCK_NR = NR_DIRECT_BLOCKS + NR_INDIRECT_BLOCKS + (NR_INDIRECT_BLOCKS * NR_INDIRECT_BLOCKS);
+
 /* given logical block number, read the corresponding physical block into block.
  * return physical block number.
  * returns 0 if physical block does not exist.
@@ -13,7 +16,7 @@ testfs_read_block(struct inode *in, int log_block_nr, char *block)
 {
 	int phy_block_nr = 0;
 	assert(log_block_nr >= 0);
-	if (log_block_nr >= NR_DIRECT_BLOCKS + NR_INDIRECT_BLOCKS + NR_INDIRECT_BLOCKS * NR_INDIRECT_BLOCKS) return -EFBIG;
+	if (log_block_nr >= MAX_BLOCK_NR) return -EFBIG;
 
 	if (log_block_nr < NR_DIRECT_BLOCKS) {
 		phy_block_nr = (int)in->in.i_block_nr[log_block_nr];
@@ -137,6 +140,7 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
         if (((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS] == 0){
             bzero(indirect, BLOCK_SIZE);
             phy_block_nr = testfs_alloc_block_for_inode(in);
+
             if (phy_block_nr < 0) {
                 if (dindirect_allocated) testfs_free_block_from_inode(in, in->in.i_dindirect);
                 return phy_block_nr;
@@ -147,13 +151,13 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
             dindirect_indirect_allocated = 1;
         }
         else read_blocks(in->sb, indirect, ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS], 1);
+
         log_block_nr += NR_INDIRECT_BLOCKS;
     }
 
 	/* allocate direct block */
 	assert(((int *)indirect)[log_block_nr] == 0);
 	phy_block_nr = testfs_alloc_block_for_inode(in);
-
 	if (phy_block_nr < 0) {
         if (indirect_allocated)
             /* there was an error while allocating the direct block,
