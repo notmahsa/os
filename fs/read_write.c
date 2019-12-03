@@ -206,16 +206,14 @@ testfs_write_data(struct inode *in, const char *buf, off_t start, size_t size)
         if ((ret = testfs_allocate_block(in, block_nr, block)) < 0) return ret;
         memcpy(block + block_ix, buf + bytes_written, BLOCK_SIZE - block_ix);
         write_blocks(in->sb, block, ret, 1);
-        bytes_written += BLOCK_SIZE-block_ix;
+        bytes_written += BLOCK_SIZE - block_ix;
         block_ix = 0;
         block_nr++;
     }
     /* ret is the newly allocated physical block number */
     ret = testfs_allocate_block(in, block_nr, block);
-    if (ret < 0) {
-        in->in.i_size = MAX(in->in.i_size, start + (off_t)bytes_written);
+    if (ret < 0)
         return ret;
-    }
     memcpy(block + block_ix, buf + bytes_written, (int)size - bytes_written);
 	write_blocks(in->sb, block, ret, 1);
 	/* increment i_size by the number of bytes written. */
