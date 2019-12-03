@@ -203,12 +203,7 @@ testfs_write_data(struct inode *in, const char *buf, off_t start, size_t size)
 	int ret;
 
     while (block_ix + size - bytes_written > BLOCK_SIZE) {
-        ret = testfs_allocate_block(in, block_nr, block);
-        if (ret < 0) {
-//          if (ret == -EFBIG)
-//              in->in.i_size = MAX(in->in.i_size, start + (off_t)bytes_written);
-          return ret;
-        }
+        if ((ret = testfs_allocate_block(in, block_nr, block)) < 0) return ret;
         memcpy(block + block_ix, buf + bytes_written, BLOCK_SIZE - block_ix);
         write_blocks(in->sb, block, ret, 1);
         bytes_written += BLOCK_SIZE-block_ix;
