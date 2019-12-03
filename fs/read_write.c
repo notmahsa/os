@@ -182,11 +182,11 @@ testfs_allocate_block(struct inode *in, int log_block_nr, char *block)
 	else {
 	    log_block_nr -= NR_INDIRECT_BLOCKS;
 	    if (phy_block_nr >= 0){
-            ((int *)dindirect)[log_block_nr % NR_INDIRECT_BLOCKS] = phy_block_nr;
-            write_blocks(in->sb, dindirect, in->in.i_dindirect, 1);
+            ((int *)indirect)[log_block_nr % NR_INDIRECT_BLOCKS] = phy_block_nr;
+            write_blocks(in->sb, indirect, ((int *)dindirect)[log_block_nr / NR_INDIRECT_BLOCKS], 1);
 	    }
 	    else if (dindirect_allocated){
-		    testfs_free_block_from_inode(in,in->in.i_dindirect);
+		    testfs_free_block_from_inode(in,in->in.i_dindirect); 
 	    }
 	}
 	return phy_block_nr;
